@@ -1,0 +1,30 @@
+# Caddy reverse proxy with automatic HTTPS (Let's Encrypt).
+# {$DOMAIN} comes from the environment (set in .env.prod).
+
+# ── API ──  api.yourpos.com  → NestJS
+api.{$DOMAIN} {
+	reverse_proxy api:3001
+	encode gzip
+}
+
+# ── Super-admin / marketing root ──  yourpos.com  → Next.js
+{$DOMAIN}, www.{$DOMAIN} {
+	reverse_proxy web:3000
+	encode gzip
+}
+
+# ── Every shop subdomain ──  *.yourpos.com  → Next.js (tenant resolved from Host)
+# NOTE: wildcard TLS needs a DNS-challenge. The simplest path that works out of the
+# box is to add each shop's subdomain explicitly (Caddy auto-issues a cert per host):
+#
+#   spice.{$DOMAIN} { reverse_proxy web:3000 }
+#
+# For true *.{$DOMAIN} wildcard certs, use the Cloudflare DNS plugin build of Caddy
+# and uncomment below (requires CLOUDFLARE_API_TOKEN env):
+#
+# *.{$DOMAIN} {
+# 	tls {
+# 		dns cloudflare {$CLOUDFLARE_API_TOKEN}
+# 	}
+# 	reverse_proxy web:3000
+# }

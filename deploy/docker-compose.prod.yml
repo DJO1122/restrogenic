@@ -1,0 +1,76 @@
+# RestroGenie — production stack for a single AWS Lightsail box.
+# Postgres + NestJS API + Next.js web + Caddy (auto-HTTPS incl. wildcard subdomains).
+# Usage:  cd deploy && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-restrogenic}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:-restrogenic}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-restrogenic}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # not exposed to the host/internet — only the api talks to it
+    expose:
+      - "5432"
+
+  api:
+    build:
+      context: ../apps/api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-restrogenic}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-restrogenic}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      PLATFORM_JWT_SECRET: ${PLATFORM_JWT_SECRET:?set PLATFORM_JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://*.${DOMAIN}}
+      PORT: 3001
+      SEED_ON_BOOT: ${SEED_ON_BOOT:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3001"
+
+  web:
+    build:
+      context: ../apps/web
+      args:
+        NEXT_PUBLIC_API_URL: https://api.${DOMAIN}
+        NEXT_PUBLIC_WS_URL: wss://api.${DOMAIN}
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: https://api.${DOMAIN}
+      NEXT_PUBLIC_WS_URL: wss://api.${DOMAIN}
+    depends_on:
+      - api
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

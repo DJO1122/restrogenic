@@ -1,0 +1,484 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: SQLite doesn't support enums. All enum fields are stored as String.
+// Valid values are documented inline for each field.
+
+// Restaurant = TENANT (one shop). Multi-vertical via shopType.
+model Restaurant {
+  id            String   @id @default(cuid())
+  name          String
+  gstin         String?
+  address       String?
+  phone         String?
+  email         String?
+  logoUrl       String?
+  currency      String   @default("INR")
+  timezone      String   @default("Asia/Kolkata")
+  taxMode       String   @default("GST")
+  serviceCharge Float    @default(0)
+  // ── SaaS / control-plane fields ──
+  shopType      String   @default("restaurant") // restaurant|retail|grocery|pharmacy
+  subdomain     String?  @unique                // spice.yourpos.com
+  status        String   @default("Active")     // Trial|Active|Suspended|Cancelled
+  planId        String?
+  ownerName     String?
+  ownerEmail    String?
+  city          String?
+  trialEndsAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  plan          Plan?         @relation(fields: [planId], references: [id])
+  subscription  Subscription?
+  invoices      Invoice[]
+  branches      Branch[]
+  users         User[]
+
+  @@index([status])
+  @@index([shopType])
+}
+
+model Branch {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  address      String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant     Restaurant     @relation(fields: [restaurantId], references: [id])
+  users          User[]
+  tables         Table[]
+  orders         Order[]
+  shifts         Shift[]
+  dailySummaries DailySummary[]
+  stockItems     StockItem[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  restaurantId String
+  branchId     String?
+  name         String
+  email        String   @unique
+  passwordHash String
+  pin          String?
+  role         String   @default("CASHIER") // OWNER|MANAGER|CASHIER|WAITER|KITCHEN|ACCOUNTANT
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  branch     Branch?    @relation(fields: [branchId], references: [id])
+  orders     Order[]
+  auditLogs  AuditLog[]
+}
+
+model MenuCategory {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  description  String?
+  imageUrl     String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items MenuItem[]
+
+  @@index([restaurantId])
+}
+
+model MenuItem {
+  id              String   @id @default(cuid())
+  categoryId      String
+  name            String
+  description     String?
+  imageUrl        String?
+  basePrice       Float
+  taxCategory     String   @default("GST_5") // GST_5|GST_12|GST_18|GST_28|EXEMPT
+  isVeg           Boolean  @default(true)
+  isAvailable     Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  preparationTime Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  category    MenuCategory  @relation(fields: [categoryId], references: [id])
+  variants    ItemVariant[]
+  addons      ItemAddon[]
+  orderItems  OrderItem[]
+  recipeItems RecipeItem[]
+
+  @@index([categoryId])
+}
+
+model ItemVariant {
+  id         String  @id @default(cuid())
+  menuItemId String
+  name       String
+  price      Float
+  isDefault  Boolean @default(false)
+
+  menuItem   MenuItem    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+}
+
+model ItemAddon {
+  id         String  @id @default(cuid())
+  menuItemId String
+  name       String
+  price      Float
+  isDefault  Boolean @default(false)
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+}
+
+model Table {
+  id         String    @id @default(cuid())
+  branchId   String
+  name       String
+  capacity   Int       @default(4)
+  status     String    @default("AVAILABLE") // AVAILABLE|OCCUPIED|RESERVED|CLEANING
+  section    String?
+  posX       Float?
+  posY       Float?
+  occupiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  branch Branch  @relation(fields: [branchId], references: [id])
+  orders Order[]
+}
+
+model Customer {
+  id            String    @id @default(cuid())
+  restaurantId  String
+  name          String
+  phone         String    @unique
+  email         String?
+  loyaltyPoints Int       @default(0)
+  totalOrders   Int       @default(0)
+  totalSpent    Float     @default(0)
+  lastVisit     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orders Order[]
+
+  @@index([phone])
+  @@index([restaurantId])
+}
+
+model Order {
+  id              String    @id @default(cuid())
+  branchId        String
+  orderNumber     String
+  orderType       String    @default("DINE_IN") // DINE_IN|TAKEAWAY|DELIVERY|ONLINE
+  status          String    @default("PENDING") // PENDING|CONFIRMED|PREPARING|READY|SERVED|COMPLETED|CANCELLED|HELD
+  tableId         String?
+  customerId      String?
+  userId          String
+  customerName    String?
+  customerPhone   String?
+  notes           String?
+  subtotal        Float
+  discountAmount  Float     @default(0)
+  discountPercent Float?
+  cgst            Float     @default(0)
+  sgst            Float     @default(0)
+  igst            Float     @default(0)
+  serviceCharge   Float     @default(0)
+  total           Float
+  paymentStatus   String    @default("PENDING") // PENDING|PARTIAL|COMPLETED|REFUNDED
+  isHeld          Boolean   @default(false)
+  kotPrinted      Boolean   @default(false)
+  receiptPrinted  Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime?
+
+  branch   Branch    @relation(fields: [branchId], references: [id])
+  table    Table?    @relation(fields: [tableId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([branchId, createdAt])
+  @@index([orderNumber])
+  @@index([status])
+}
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  menuItemId     String
+  variantId      String?
+  name           String
+  variantName    String?
+  quantity       Int
+  unitPrice      Float
+  totalPrice     Float
+  notes          String?
+  discountAmount Float    @default(0)
+  kotSent        Boolean  @default(false)
+  isReady        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  order    Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem     @relation(fields: [menuItemId], references: [id])
+  variant  ItemVariant? @relation(fields: [variantId], references: [id])
+}
+
+model Payment {
+  id           String   @id @default(cuid())
+  orderId      String
+  method       String   // CASH|CARD|UPI|WALLET|LOYALTY_POINTS
+  amount       Float
+  reference    String?
+  cashTendered Float?
+  changeGiven  Float?
+  status       String   @default("COMPLETED") // PENDING|PARTIAL|COMPLETED|REFUNDED
+  createdAt    DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String
+  phone        String?
+  email        String?
+  address      String?
+  gstIn        String?
+  paymentTerms String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  stockItems     StockItem[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model StockItem {
+  id           String    @id @default(cuid())
+  branchId     String
+  supplierId   String?
+  name         String
+  unit         String
+  currentQty   Float     @default(0)
+  reorderLevel Float     @default(0)
+  costPerUnit  Float     @default(0)
+  expiryDate   DateTime?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  branch       Branch             @relation(fields: [branchId], references: [id])
+  supplier     Supplier?          @relation(fields: [supplierId], references: [id])
+  transactions StockTransaction[]
+  recipeItems  RecipeItem[]
+
+  @@index([branchId])
+}
+
+model StockTransaction {
+  id              String   @id @default(cuid())
+  stockItemId     String
+  type            String   // PURCHASE|CONSUMPTION|WASTE|ADJUSTMENT|TRANSFER
+  quantity        Float
+  costPerUnit     Float?
+  notes           String?
+  orderId         String?
+  purchaseOrderId String?
+  createdAt       DateTime @default(now())
+
+  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+}
+
+model PurchaseOrder {
+  id           String    @id @default(cuid())
+  supplierId   String
+  branchId     String
+  status       String    @default("PENDING")
+  totalAmount  Float
+  notes        String?
+  expectedDate DateTime?
+  receivedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  supplier Supplier           @relation(fields: [supplierId], references: [id])
+  items    PurchaseOrderItem[]
+}
+
+model PurchaseOrderItem {
+  id              String @id @default(cuid())
+  purchaseOrderId String
+  stockItemName   String
+  quantity        Float
+  unit            String
+  costPerUnit     Float
+  totalCost       Float
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+}
+
+model RecipeItem {
+  id          String @id @default(cuid())
+  menuItemId  String
+  stockItemId String
+  quantity    Float
+
+  menuItem  MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+
+  @@unique([menuItemId, stockItemId])
+}
+
+model ExpenseCategory {
+  id   String @id @default(cuid())
+  name String
+  type String @default("VARIABLE")
+
+  expenses Expense[]
+}
+
+model Expense {
+  id           String   @id @default(cuid())
+  restaurantId String
+  categoryId   String
+  description  String
+  amount       Float
+  date         DateTime
+  receiptUrl   String?
+  isRecurring  Boolean  @default(false)
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+}
+
+model Shift {
+  id           String    @id @default(cuid())
+  branchId     String
+  userId       String
+  openedAt     DateTime  @default(now())
+  closedAt     DateTime?
+  openingCash  Float
+  closingCash  Float?
+  systemCash   Float?
+  cashVariance Float?
+  notes        String?
+
+  branch Branch @relation(fields: [branchId], references: [id])
+}
+
+model DailySummary {
+  id                String   @id @default(cuid())
+  branchId          String
+  date              DateTime
+  totalOrders       Int
+  totalRevenue      Float
+  totalDiscount     Float
+  totalTax          Float
+  cashRevenue       Float
+  cardRevenue       Float
+  upiRevenue        Float
+  dineInRevenue     Float
+  takeawayRevenue   Float
+  deliveryRevenue   Float
+  averageOrderValue Float
+  totalCovers       Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([branchId, date])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?  // stored as JSON string for SQLite
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SaaS CONTROL PLANE (managed by platform super-admins, not shop users)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Plan {
+  id          String  @id @default(cuid())
+  name        String
+  price       Int     @default(0)        // ₹ per month, 0 = free
+  interval    String  @default("monthly")
+  maxBranches Int     @default(1)        // -1 = unlimited
+  maxUsers    Int     @default(3)
+  maxItems    Int     @default(200)
+  modules     String  @default("[]")     // JSON array of enabled module keys
+  featured    Boolean @default(false)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+
+  tenants Restaurant[]
+}
+
+model Subscription {
+  id               String   @id @default(cuid())
+  restaurantId     String   @unique
+  razorpaySubId    String?
+  status           String   @default("active") // active|past_due|cancelled
+  currentPeriodEnd DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+model Invoice {
+  id           String   @id @default(cuid())
+  restaurantId String
+  number       String   @unique
+  amount       Int
+  status       String   @default("Pending") // Paid|Pending|Failed
+  planName     String?
+  periodFrom   DateTime?
+  periodTo     DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId])
+}
+
+model PlatformAdmin {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin") // admin|support|billing
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
