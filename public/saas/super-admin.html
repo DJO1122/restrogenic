@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RestroGenie Cloud — Super Admin</title>
+<style>
+:root{--sb:#1e1b4b;--sb2:#13112e;--ac:#6366f1;--ac2:#4f46e5;--bg:#f1f5f9;--card:#fff;--txt:#1e293b;--mut:#64748b;--bdr:#e2e8f0;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--ok-bg:#dcfce7;--warn-bg:#fef3c7;--err-bg:#fee2e2;--info:#0ea5e9}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden}
+#sidebar{width:230px;min-width:230px;background:var(--sb2);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:20px 16px;border-bottom:1px solid #2d2a5e;display:flex;align-items:center;gap:10px}
+.sb-brand .logo{width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px}
+.sb-brand .name{color:#f8fafc;font-weight:700;font-size:15px;line-height:1.2}
+.sb-brand .sub{color:#a5b4fc;font-size:11px}
+.sb-section{padding:14px 8px 4px;color:#4c4a7a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-radius:8px;margin:2px 8px;color:#a5b4fc;font-size:13.5px;transition:.15s;border:none;background:none;width:calc(100% - 16px);text-align:left}
+.nav-item:hover{background:#2d2a5e;color:#e0e7ff}
+.nav-item.active{background:var(--ac);color:#fff}
+.nav-item .ic{font-size:16px;width:20px;text-align:center}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{background:var(--card);border-bottom:1px solid var(--bdr);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#topbar .page-title{font-weight:700;font-size:18px}
+#topbar .meta{color:var(--mut);font-size:13px;display:flex;align-items:center;gap:14px}
+#content{flex:1;overflow-y:auto;padding:24px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
+.card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-stat .ic{font-size:26px;margin-bottom:8px}
+.card-stat .label{font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.card-stat .value{font-size:25px;font-weight:700;margin-top:4px}
+.card-stat .change{font-size:12px;color:var(--mut);margin-top:2px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-hdr h2{font-size:16px;font-weight:700}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:.15s}
+.btn-primary{background:var(--ac);color:#fff}.btn-primary:hover{background:var(--ac2)}
+.btn-success{background:var(--ok);color:#fff}.btn-danger{background:var(--err);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--bdr);color:var(--txt)}.btn-outline:hover{background:var(--bg)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.tbl-wrap{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#f8fafc;padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--bdr)}
+td{padding:11px 14px;font-size:13.5px;border-bottom:1px solid var(--bdr)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;font-weight:600;color:var(--mut)}
+input,select,textarea{padding:9px 12px;border:1.5px solid var(--bdr);border-radius:8px;font-size:13.5px;color:var(--txt);background:var(--card);outline:none}
+input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700}
+.b-active{background:var(--ok-bg);color:var(--ok)}.b-trial{background:#e0e7ff;color:#4f46e5}.b-suspended{background:var(--err-bg);color:var(--err)}.b-cancelled{background:#f1f5f9;color:var(--mut)}
+.b-plan{background:#f3e8ff;color:#9333ea}
+.search-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-input{padding:8px 14px;border:1.5px solid var(--bdr);border-radius:8px;font-size:13px;min-width:220px;outline:none}
+#toast-wrap{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:#1e1b4b;color:#f8fafc;padding:12px 18px;border-radius:10px;font-size:13.5px;font-weight:500;pointer-events:auto;display:flex;align-items:center;gap:10px;min-width:230px;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:sl .3s ease}
+.toast.ok{border-left:4px solid var(--ok)}.toast.err{border-left:4px solid var(--err)}.toast.warn{border-left:4px solid var(--warn)}
+@keyframes sl{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+.overlay{position:fixed;inset:0;background:rgba(15,12,40,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--card);border-radius:14px;padding:24px;min-width:380px;max-width:640px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.modal-hdr h3{font-size:17px;font-weight:700}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--mut)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.profit-pos{color:var(--ok);font-weight:600}.profit-neg{color:var(--err);font-weight:600}
+.bars{display:flex;align-items:flex-end;gap:8px;height:130px;padding-top:10px}
+.bar{flex:1;background:linear-gradient(180deg,#818cf8,#6366f1);border-radius:6px 6px 0 0;min-height:4px;position:relative;transition:.3s}
+.bar span{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:10px;color:var(--mut)}
+.bar b{position:absolute;top:-18px;left:0;right:0;text-align:center;font-size:10px;color:var(--txt)}
+.type-ic{display:inline-flex;align-items:center;gap:6px}
+.settings-section{background:var(--card);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.settings-section h3{font-size:15px;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--bdr)}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.plan-card{background:var(--card);border:2px solid var(--bdr);border-radius:14px;padding:20px;position:relative}
+.plan-card.featured{border-color:var(--ac)}
+.plan-card .pname{font-size:16px;font-weight:700}
+.plan-card .pprice{font-size:28px;font-weight:800;margin:8px 0}
+.plan-card .pprice small{font-size:13px;font-weight:500;color:var(--mut)}
+.plan-card ul{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:7px}
+.plan-card li{font-size:12.5px;color:var(--txt);display:flex;gap:7px}
+.plan-card li:before{content:'✓';color:var(--ok);font-weight:700}
+#login{position:fixed;inset:0;background:linear-gradient(135deg,#1e1b4b,#312e81);z-index:5000;display:flex;align-items:center;justify-content:center}
+.login-box{background:#fff;border-radius:16px;padding:34px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.divider{height:1px;background:var(--bdr);margin:16px 0}
+.mini{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px">☁️</div>
+      <h1 style="font-size:22px;font-weight:800">RestroGenie Cloud</h1>
+      <p class="mini">Super Admin Control Panel</p>
+    </div>
+    <div class="form-group" style="margin-bottom:12px"><label>Admin Email</label><input id="lg-email" value="admin@restrogenic.cloud"></div>
+    <div class="form-group" style="margin-bottom:18px"><label>Password</label><input id="lg-pass" type="password" value="admin123"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">Sign In</button>
+    <p class="mini" style="text-align:center;margin-top:14px">Demo: admin@restrogenic.cloud / admin123</p>
+  </div>
+</div>
+
+<div id="sidebar" style="display:none">
+  <div class="sb-brand">
+    <div class="logo">☁️</div>
+    <div><div class="name">RestroGenie Cloud</div><div class="sub">Super Admin</div></div>
+  </div>
+  <div class="sb-section">Overview</div>
+  <button class="nav-item active" data-page="dashboard" onclick="nav('dashboard')"><span class="ic">📊</span> Dashboard</button>
+  <div class="sb-section">Tenants</div>
+  <button class="nav-item" data-page="shops" onclick="nav('shops')"><span class="ic">🏪</span> All Shops</button>
+  <button class="nav-item" data-page="verticals" onclick="nav('verticals')"><span class="ic">🧩</span> Shop Types</button>
+  <div class="sb-section">Monetization</div>
+  <button class="nav-item" data-page="plans" onclick="nav('plans')"><span class="ic">💳</span> Plans</button>
+  <button class="nav-item" data-page="billing" onclick="nav('billing')"><span class="ic">🧾</span> Billing &amp; Revenue</button>
+  <div class="sb-section">System</div>
+  <button class="nav-item" data-page="settings" onclick="nav('settings')"><span class="ic">⚙️</span> Settings</button>
+  <button class="nav-item" onclick="logout()"><span class="ic">🚪</span> Logout</button>
+</div>
+
+<div id="main" style="display:none">
+  <div id="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="meta"><span id="tb-time"></span><span style="background:var(--ac);color:#fff;padding:3px 10px;border-radius:6px;font-size:12px">👤 Super Admin</span></div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<div id="toast-wrap"></div>
+<div id="modal-overlay" class="overlay" style="display:none" onclick="if(event.target===this)closeModal()"><div id="modal-box" class="modal"></div></div>
+
+<script>
+// ===== DB =====
+const DB={get:(k,d=null)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+function uid(){return crypto.randomUUID?crypto.randomUUID():'id-'+Date.now()+Math.random().toString(16).slice(2)}
+function fmt(n){n=parseFloat(n)||0;return '₹'+n.toLocaleString('en-IN',{maximumFractionDigits:0})}
+function fmtDate(d){return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function daysFromNow(d){return Math.ceil((new Date(d)-new Date())/86400000)}
+
+// ===== TOAST / MODAL =====
+function toast(m,t='ok'){const w=document.getElementById('toast-wrap');const ic={ok:'✓',err:'✕',warn:'⚠'};const d=document.createElement('div');d.className='toast '+t;d.innerHTML=`<span>${ic[t]}</span><span>${escH(m)}</span>`;w.appendChild(d);setTimeout(()=>{d.style.animation='sl .3s ease reverse';setTimeout(()=>d.remove(),300)},2800)}
+function openModal(h){document.getElementById('modal-box').innerHTML=h;document.getElementById('modal-overlay').style.display='flex'}
+function closeModal(){document.getElementById('modal-overlay').style.display='none'}
+
+// ===== DATA =====
+function getShops(){return DB.get('sa_shops',[])}
+function setShops(s){DB.set('sa_shops',s)}
+function getPlans(){return DB.get('sa_plans',[])}
+function setPlans(p){DB.set('sa_plans',p)}
+function getVerticals(){return DB.get('sa_verticals',[])}
+function getInvoices(){return DB.get('sa_invoices',[])}
+function planById(id){return getPlans().find(p=>p.id===id)||{name:'—',price:0}}
+function vertById(t){return getVerticals().find(v=>v.type===t)||{label:t,icon:'🏪'}}
+
+// ===== AUTH =====
+function doLogin(){
+  const e=document.getElementById('lg-email').value, p=document.getElementById('lg-pass').value;
+  if(e==='admin@restrogenic.cloud'&&p==='admin123'){
+    DB.set('sa_session',true);showApp();
+  }else toast('Invalid credentials','err');
+}
+function logout(){DB.set('sa_session',false);location.reload()}
+function showApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('main').style.display='flex';
+  setInterval(()=>{document.getElementById('tb-time').textContent=new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})},1000);
+  nav('dashboard');
+}
+
+// ===== NAV =====
+function nav(page){
+  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  const titles={dashboard:'Platform Dashboard',shops:'All Shops',verticals:'Shop Types',plans:'Subscription Plans',billing:'Billing & Revenue',settings:'Settings'};
+  document.getElementById('page-title').textContent=titles[page]||page;
+  ({dashboard:renderDash,shops:renderShops,verticals:renderVerticals,plans:renderPlans,billing:renderBilling,settings:renderSettings}[page])();
+}
+
+// ===== KPIs =====
+function mrr(){return getShops().filter(s=>s.status==='Active').reduce((a,s)=>a+(planById(s.planId).price||0),0)}
+function kpis(){
+  const shops=getShops();
+  return {
+    total:shops.length,
+    active:shops.filter(s=>s.status==='Active').length,
+    trial:shops.filter(s=>s.status==='Trial').length,
+    suspended:shops.filter(s=>s.status==='Suspended').length,
+    mrr:mrr(),
+    arr:mrr()*12,
+    orders:shops.reduce((a,s)=>a+(s.monthlyOrders||0),0),
+    gmv:shops.reduce((a,s)=>a+(s.monthlyRevenue||0),0),
+  };
+}
+
+// ===== DASHBOARD =====
+function renderDash(){
+  const k=kpis(), shops=getShops();
+  const recent=[...shops].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,6);
+  // MRR trend (6 months synthetic from current)
+  const months=['Jan','Feb','Mar','Apr','May','Jun'];
+  const base=k.mrr||10000;
+  const trend=[0.55,0.64,0.72,0.81,0.92,1].map(f=>Math.round(base*f));
+  const maxT=Math.max(...trend,1);
+  // by vertical
+  const byVert={};
+  shops.forEach(s=>{byVert[s.type]=(byVert[s.type]||0)+1});
+
+  document.getElementById('content').innerHTML=`
+<div class="cards">
+  <div class="card card-stat"><div class="ic">🏪</div><div class="label">Total Shops</div><div class="value">${k.total}</div><div class="change">${k.active} active · ${k.trial} trial</div></div>
+  <div class="card card-stat"><div class="ic">💰</div><div class="label">MRR</div><div class="value">${fmt(k.mrr)}</div><div class="change">ARR ${fmt(k.arr)}</div></div>
+  <div class="card card-stat"><div class="ic">📦</div><div class="label">Orders / mo (all shops)</div><div class="value">${k.orders.toLocaleString('en-IN')}</div></div>
+  <div class="card card-stat"><div class="ic">💵</div><div class="label">GMV / mo (all shops)</div><div class="value">${fmt(k.gmv)}</div><div class="change">Gross merchandise value</div></div>
+  <div class="card card-stat"><div class="ic">⚠️</div><div class="label">Suspended</div><div class="value" style="color:${k.suspended?'var(--err)':'var(--ok)'}">${k.suspended}</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px">
+  <div class="card">
+    <div class="sec-hdr"><h2>📈 MRR Trend</h2><span class="mini">last 6 months</span></div>
+    <div class="bars">${trend.map((v,i)=>`<div class="bar" style="height:${Math.max(6,v/maxT*100)}%"><b>${fmt(v)}</b><span>${months[i]}</span></div>`).join('')}</div>
+  </div>
+  <div class="card">
+    <div class="sec-hdr"><h2>🧩 Shops by Type</h2></div>
+    ${Object.entries(byVert).sort((a,b)=>b[1]-a[1]).map(([t,n])=>{const v=vertById(t);const pct=Math.round(n/k.total*100);return`
+    <div style="margin:10px 0">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${v.icon} ${escH(v.label)}</span><span style="font-weight:700">${n}</span></div>
+      <div style="height:8px;background:var(--bdr);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--ac)"></div></div>
+    </div>`}).join('')||'<p class="mini">No shops yet</p>'}
+  </div>
+</div>
+<div class="tbl-wrap">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">
+    <h2 style="font-size:15px;font-weight:700">🆕 Recent Signups</h2>
+    <button class="btn btn-outline btn-sm" onclick="nav('shops')">View all shops</button>
+  </div>
+  <table><thead><tr><th>Shop</th><th>Type</th><th>Plan</th><th>Status</th><th>Joined</th><th>MRR</th></tr></thead><tbody>
+  ${recent.map(s=>{const v=vertById(s.type),pl=planById(s.planId);return`<tr>
+    <td style="font-weight:600">${escH(s.name)}<div class="mini">${escH(s.city||'')}</div></td>
+    <td>${v.icon} ${escH(v.label)}</td>
+    <td><span class="badge b-plan">${escH(pl.name)}</span></td>
+    <td><span class="badge b-${s.status.toLowerCase()}">${s.status}</span></td>
+    <td>${fmtDate(s.createdAt)}</td>
+    <td>${s.status==='Active'?fmt(pl.price):'—'}</td>
+  </tr>`}).join('')||'<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--mut)">No shops</td></tr>'}
+  </tbody></table>
+</div>`;
+}
+
+// ===== SHOPS =====
+let shopSearch='',shopFilterStatus='All',shopFilterType='All';
+function renderShops(){
+  const verts=getVerticals();
+  let shops=getShops().filter(s=>{
+    const ms=!shopSearch||s.name.toLowerCase().includes(shopSearch.toLowerCase())||(s.ownerEmail||'').toLowerCase().includes(shopSearch.toLowerCase())||(s.city||'').toLowerCase().includes(shopSearch.toLowerCase());
+    const mst=shopFilterStatus==='All'||s.status===shopFilterStatus;
+    const mt=shopFilterType==='All'||s.type===shopFilterType;
+    return ms&&mst&&mt;
+  }).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+
+  document.getElementById('content').innerHTML=`
+<div class="search-row">
+  <input class="search-input" placeholder="🔍 Search shop, owner, city..." value="${escH(shopSearch)}" oninput="shopSearch=this.value;renderShops()" style="flex:1">
+  <select onchange="shopFilterType=this.value;renderShops()"><option>All</option>${verts.map(v=>`<option${shopFilterType===v.type?' selected':''} value="${v.type}">${v.icon} ${escH(v.label)}</option>`).join('')}</select>
+  <select onchange="shopFilterStatus=this.value;renderShops()">${['All','Active','Trial','Suspended','Cancelled'].map(s=>`<option${shopFilterStatus===s?' selected':''}>${s}</option>`).join('')}</select>
+  <button class="btn btn-primary" onclick="openShopModal()">+ Add Shop</button>
+</div>
+<div class="tbl-wrap">
+  <table><thead><tr><th>Shop</th><th>Type</th><th>Owner</th><th>Plan</th><th>Status</th><th>Branches</th><th>Orders/mo</th><th>Actions</th></tr></thead><tbody>
+  ${shops.map(s=>{const v=vertById(s.type),pl=planById(s.planId);const trialDays=s.status==='Trial'?daysFromNow(s.trialEndsAt):null;return`<tr>
+    <td style="font-weight:600">${escH(s.name)}<div class="mini">${escH(s.city||'')} · ${fmtDate(s.createdAt)}</div></td>
+    <td>${v.icon} ${escH(v.label)}</td>
+    <td>${escH(s.ownerName||'')}<div class="mini">${escH(s.ownerEmail||'')}</div></td>
+    <td><span class="badge b-plan">${escH(pl.name)}</span><div class="mini">${pl.price?fmt(pl.price)+'/mo':'Free'}</div></td>
+    <td><span class="badge b-${s.status.toLowerCase()}">${s.status}</span>${trialDays!==null?`<div class="mini">${trialDays>0?trialDays+'d left':'expired'}</div>`:''}</td>
+    <td>${s.branches||1}</td>
+    <td>${(s.monthlyOrders||0).toLocaleString('en-IN')}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-outline btn-sm" onclick="openShopDetail('${s.id}')">View</button>
+      ${s.status==='Suspended'
+        ?`<button class="btn btn-success btn-sm" onclick="toggleSuspend('${s.id}')">Activate</button>`
+        :`<button class="btn btn-outline btn-sm" style="color:var(--warn);border-color:var(--warn)" onclick="toggleSuspend('${s.id}')">Suspend</button>`}
+    </td>
+  </tr>`}).join('')||'<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--mut)">No shops match.</td></tr>'}
+  </tbody></table>
+</div>
+<p class="mini" style="margin-top:10px">${shops.length} shop(s) shown · MRR ${fmt(mrr())}</p>`;
+}
+
+function openShopModal(){
+  const verts=getVerticals(),plans=getPlans();
+  openModal(`<div class="modal-hdr"><h3>🏪 Provision New Shop (Tenant)</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+  <div class="form-grid">
+    <div class="form-group" style="grid-column:1/-1"><label>Shop Name *</label><input id="sh-name" placeholder="e.g. Spice Garden / Sharma Kirana"></div>
+    <div class="form-group"><label>Shop Type</label><select id="sh-type">${verts.map(v=>`<option value="${v.type}">${v.icon} ${escH(v.label)}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Plan</label><select id="sh-plan">${plans.map(p=>`<option value="${p.id}">${escH(p.name)} — ${p.price?fmt(p.price)+'/mo':'Free'}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Owner Name</label><input id="sh-owner" placeholder="Owner name"></div>
+    <div class="form-group"><label>Owner Email *</label><input id="sh-email" placeholder="owner@shop.com"></div>
+    <div class="form-group"><label>Phone</label><input id="sh-phone" placeholder="+91..."></div>
+    <div class="form-group"><label>City</label><input id="sh-city" placeholder="City"></div>
+    <div class="form-group"><label>Start As</label><select id="sh-status"><option>Trial</option><option>Active</option></select></div>
+    <div class="form-group"><label>Trial Days</label><input id="sh-trial" type="number" value="14"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveShop()">Create Shop</button></div>`);
+}
+
+function saveShop(){
+  const name=document.getElementById('sh-name').value.trim();
+  const email=document.getElementById('sh-email').value.trim();
+  if(!name||!email){toast('Shop name and owner email required','err');return}
+  const status=document.getElementById('sh-status').value;
+  const trialDays=parseInt(document.getElementById('sh-trial').value)||14;
+  const shop={
+    id:uid(),name,type:document.getElementById('sh-type').value,planId:document.getElementById('sh-plan').value,
+    ownerName:document.getElementById('sh-owner').value.trim(),ownerEmail:email,
+    phone:document.getElementById('sh-phone').value.trim(),city:document.getElementById('sh-city').value.trim(),
+    status,createdAt:new Date().toISOString(),
+    trialEndsAt:new Date(Date.now()+trialDays*86400000).toISOString(),
+    branches:1,users:1,monthlyOrders:0,monthlyRevenue:0,
+    subdomain:name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,20)
+  };
+  const shops=getShops();shops.push(shop);setShops(shops);
+  closeModal();toast(`Shop "${name}" provisioned`,'ok');renderShops();
+}
+
+function toggleSuspend(id){
+  const shops=getShops();const s=shops.find(x=>x.id===id);if(!s)return;
+  if(s.status==='Suspended'){s.status=s.trialEndsAt&&daysFromNow(s.trialEndsAt)>0?'Active':'Active'}
+  else{if(!confirm(`Suspend "${s.name}"? Their staff will be locked out until reactivated.`))return;s.status='Suspended'}
+  setShops(shops);toast(`${s.name} → ${s.status}`,s.status==='Suspended'?'warn':'ok');renderShops();
+}
+
+function openShopDetail(id){
+  const s=getShops().find(x=>x.id===id);if(!s)return;
+  const v=vertById(s.type),pl=planById(s.planId),plans=getPlans();
+  const invoices=getInvoices().filter(i=>i.shopId===id).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  openModal(`<div class="modal-hdr"><h3>${v.icon} ${escH(s.name)}</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="badge b-${s.status.toLowerCase()}">${s.status}</span>
+    <span class="badge b-plan">${escH(pl.name)} · ${pl.price?fmt(pl.price)+'/mo':'Free'}</span>
+    <span class="badge" style="background:#e0e7ff;color:#4338ca">${v.icon} ${escH(v.label)}</span>
+  </div>
+  <div class="form-grid" style="margin-bottom:14px">
+    <div><div class="mini">Owner</div><div style="font-weight:600">${escH(s.ownerName||'—')}</div><div class="mini">${escH(s.ownerEmail)}</div></div>
+    <div><div class="mini">Location</div><div style="font-weight:600">${escH(s.city||'—')}</div><div class="mini">${escH(s.phone||'')}</div></div>
+    <div><div class="mini">Subdomain</div><div style="font-weight:600">${escH(s.subdomain)}.app</div></div>
+    <div><div class="mini">Joined</div><div style="font-weight:600">${fmtDate(s.createdAt)}</div></div>
+    <div><div class="mini">Branches</div><div style="font-weight:600">${s.branches||1}</div></div>
+    <div><div class="mini">Orders / mo</div><div style="font-weight:600">${(s.monthlyOrders||0).toLocaleString('en-IN')}</div></div>
+    <div><div class="mini">GMV / mo</div><div style="font-weight:600">${fmt(s.monthlyRevenue||0)}</div></div>
+    <div><div class="mini">Users</div><div style="font-weight:600">${s.users||1}</div></div>
+  </div>
+  <div class="form-group" style="margin-bottom:12px"><label>Change Plan</label>
+    <select id="sd-plan" onchange="changePlan('${s.id}',this.value)">${plans.map(p=>`<option value="${p.id}"${p.id===s.planId?' selected':''}>${escH(p.name)} — ${p.price?fmt(p.price)+'/mo':'Free'}</option>`).join('')}</select>
+  </div>
+  <div class="divider"></div>
+  <div style="font-weight:700;font-size:13px;margin-bottom:8px">🧾 Recent Invoices</div>
+  ${invoices.length?`<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+    ${invoices.slice(0,5).map(i=>`<tr><td>${fmtDate(i.date)}</td><td>${escH(i.plan)}</td><td>${fmt(i.amount)}</td><td><span class="badge ${i.status==='Paid'?'b-active':'b-suspended'}">${i.status}</span></td></tr>`).join('')}
+  </tbody></table></div>`:'<p class="mini">No invoices yet</p>'}
+  <div class="modal-footer">
+    <button class="btn btn-outline" onclick="alert('In production this opens the shop\\'s POS in a new tab via their subdomain, or impersonates the owner for support.')">↗ Open Shop POS</button>
+    ${s.status==='Suspended'?`<button class="btn btn-success" onclick="toggleSuspend('${s.id}');closeModal()">Activate</button>`:`<button class="btn btn-danger" onclick="toggleSuspend('${s.id}');closeModal()">Suspend</button>`}
+    <button class="btn btn-outline" style="color:var(--err);border-color:var(--err)" onclick="deleteShop('${s.id}')">Delete</button>
+  </div>`);
+}
+
+function changePlan(id,planId){
+  const shops=getShops();const s=shops.find(x=>x.id===id);if(!s)return;
+  s.planId=planId;if(s.status==='Trial')s.status='Active';setShops(shops);
+  toast(`${s.name} moved to ${planById(planId).name}`,'ok');
+}
+
+function deleteShop(id){
+  if(!confirm('Permanently delete this shop and all its data? This cannot be undone.'))return;
+  setShops(getShops().filter(s=>s.id!==id));closeModal();toast('Shop deleted','warn');renderShops();
+}
+
+// ===== VERTICALS (SHOP TYPES) =====
+function renderVerticals(){
+  const verts=getVerticals(),shops=getShops();
+  document.getElementById('content').innerHTML=`
+  <p class="mini" style="margin-bottom:16px">Each shop type enables a different set of modules. Restaurants get tables &amp; KOT; retail/grocery get barcode &amp; cart; pharmacy adds batch/expiry.</p>
+  <div class="plan-grid">
+  ${verts.map(v=>{const count=shops.filter(s=>s.type===v.type).length;return`
+    <div class="plan-card">
+      <div style="font-size:30px">${v.icon}</div>
+      <div class="pname" style="margin-top:6px">${escH(v.label)}</div>
+      <div class="mini">${count} active shop(s)</div>
+      <ul style="margin-top:12px">${v.modules.map(m=>`<li>${escH(m)}</li>`).join('')}</ul>
+    </div>`}).join('')}
+  </div>`;
+}
+
+// ===== PLANS =====
+function renderPlans(){
+  const plans=getPlans(),shops=getShops();
+  document.getElementById('content').innerHTML=`
+  <div class="sec-hdr"><h2>Subscription Plans</h2><button class="btn btn-primary" onclick="openPlanModal()">+ Add Plan</button></div>
+  <div class="plan-grid">
+  ${plans.map(p=>{const subs=shops.filter(s=>s.planId===p.id&&s.status==='Active').length;return`
+    <div class="plan-card${p.featured?' featured':''}">
+      ${p.featured?'<span class="badge b-plan" style="position:absolute;top:14px;right:14px">Popular</span>':''}
+      <div class="pname">${escH(p.name)}</div>
+      <div class="pprice">${p.price?fmt(p.price):'Free'}<small>${p.price?'/mo':''}</small></div>
+      <div class="mini">${subs} active subscriber(s) · ${fmt(p.price*subs)}/mo</div>
+      <ul>
+        <li>${p.maxBranches<0?'Unlimited':p.maxBranches} branch(es)</li>
+        <li>${p.maxUsers<0?'Unlimited':p.maxUsers} staff users</li>
+        <li>${p.maxItems<0?'Unlimited':p.maxItems} menu/products</li>
+        ${p.modules.map(m=>`<li>${escH(m)}</li>`).join('')}
+      </ul>
+      <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center" onclick="openPlanModal('${p.id}')">Edit</button>
+    </div>`}).join('')}
+  </div>`;
+}
+
+function openPlanModal(id){
+  const p=id?getPlans().find(x=>x.id===id):{id:'',name:'',price:'',maxBranches:1,maxUsers:3,maxItems:100,modules:[],featured:false};
+  openModal(`<div class="modal-hdr"><h3>${id?'Edit':'New'} Plan</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+  <div class="form-grid">
+    <div class="form-group"><label>Plan Name</label><input id="pl-name" value="${escH(p.name)}"></div>
+    <div class="form-group"><label>Price (₹/mo, 0=Free)</label><input id="pl-price" type="number" value="${p.price||0}"></div>
+    <div class="form-group"><label>Max Branches (-1=∞)</label><input id="pl-br" type="number" value="${p.maxBranches}"></div>
+    <div class="form-group"><label>Max Users (-1=∞)</label><input id="pl-us" type="number" value="${p.maxUsers}"></div>
+    <div class="form-group"><label>Max Items (-1=∞)</label><input id="pl-it" type="number" value="${p.maxItems}"></div>
+    <div class="form-group"><label>Featured?</label><select id="pl-feat"><option value="no"${!p.featured?' selected':''}>No</option><option value="yes"${p.featured?' selected':''}>Yes</option></select></div>
+    <div class="form-group" style="grid-column:1/-1"><label>Modules (comma separated)</label><input id="pl-mod" value="${escH((p.modules||[]).join(', '))}"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="savePlan('${p.id}')">Save Plan</button></div>`);
+}
+
+function savePlan(id){
+  const plans=getPlans();
+  const obj={id:id||uid(),name:document.getElementById('pl-name').value.trim(),
+    price:parseFloat(document.getElementById('pl-price').value)||0,
+    maxBranches:parseInt(document.getElementById('pl-br').value),
+    maxUsers:parseInt(document.getElementById('pl-us').value),
+    maxItems:parseInt(document.getElementById('pl-it').value),
+    featured:document.getElementById('pl-feat').value==='yes',
+    modules:document.getElementById('pl-mod').value.split(',').map(x=>x.trim()).filter(Boolean)};
+  if(!obj.name){toast('Plan name required','err');return}
+  const idx=plans.findIndex(x=>x.id===id);if(idx>=0)plans[idx]=obj;else plans.push(obj);
+  setPlans(plans);closeModal();toast('Plan saved','ok');renderPlans();
+}
+
+// ===== BILLING =====
+function renderBilling(){
+  const shops=getShops(),invoices=getInvoices().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const k=kpis();
+  const paid=invoices.filter(i=>i.status==='Paid').reduce((a,i)=>a+i.amount,0);
+  const pending=invoices.filter(i=>i.status!=='Paid').reduce((a,i)=>a+i.amount,0);
+  document.getElementById('content').innerHTML=`
+  <div class="cards">
+    <div class="card card-stat"><div class="ic">💰</div><div class="label">MRR</div><div class="value">${fmt(k.mrr)}</div></div>
+    <div class="card card-stat"><div class="ic">📅</div><div class="label">ARR (projected)</div><div class="value">${fmt(k.arr)}</div></div>
+    <div class="card card-stat"><div class="ic">✅</div><div class="label">Collected (all-time)</div><div class="value">${fmt(paid)}</div></div>
+    <div class="card card-stat"><div class="ic">⏳</div><div class="label">Pending</div><div class="value profit-neg">${fmt(pending)}</div></div>
+  </div>
+  <div class="tbl-wrap">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);font-weight:700">🧾 Invoices</div>
+    <table><thead><tr><th>Invoice</th><th>Shop</th><th>Plan</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody>
+    ${invoices.slice(0,30).map(i=>{const s=shops.find(x=>x.id===i.shopId);return`<tr>
+      <td style="font-weight:600">${escH(i.no)}</td>
+      <td>${escH(s?s.name:'—')}</td>
+      <td>${escH(i.plan)}</td>
+      <td style="font-weight:600">${fmt(i.amount)}</td>
+      <td>${fmtDate(i.date)}</td>
+      <td><span class="badge ${i.status==='Paid'?'b-active':'b-suspended'}">${i.status}</span></td>
+    </tr>`}).join('')||'<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--mut)">No invoices</td></tr>'}
+    </tbody></table>
+  </div>
+  <p class="mini" style="margin-top:10px">In production, invoices &amp; recurring charges are generated automatically by Razorpay Subscriptions; this view reflects their webhooks.</p>`;
+}
+
+// ===== SETTINGS =====
+function renderSettings(){
+  const s=DB.get('sa_settings',{platformName:'RestroGenie Cloud',supportEmail:'support@restrogenic.cloud',currency:'₹'});
+  document.getElementById('content').innerHTML=`
+  <div class="settings-section">
+    <h3>🏢 Platform</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Platform Name</label><input id="st-name" value="${escH(s.platformName)}"></div>
+      <div class="form-group"><label>Support Email</label><input id="st-email" value="${escH(s.supportEmail)}"></div>
+      <div class="form-group"><label>Currency</label><input id="st-cur" value="${escH(s.currency)}"></div>
+    </div>
+    <div style="margin-top:14px"><button class="btn btn-primary" onclick="saveSettings()">Save</button></div>
+  </div>
+  <div class="settings-section">
+    <h3>🔌 Integrations (production)</h3>
+    <table><tbody>
+      <tr><td><b>Razorpay</b> — subscription billing &amp; UPI/card collection</td><td><span class="badge b-trial">Configure</span></td></tr>
+      <tr><td><b>Supabase</b> — multi-tenant Postgres + auth (RLS per shop)</td><td><span class="badge b-trial">Configure</span></td></tr>
+      <tr><td><b>Resend / Brevo</b> — onboarding &amp; invoice emails</td><td><span class="badge b-trial">Configure</span></td></tr>
+      <tr><td><b>Cloudflare</b> — wildcard subdomains *.yourpos.app</td><td><span class="badge b-trial">Configure</span></td></tr>
+    </tbody></table>
+    <p class="mini" style="margin-top:10px">See <b>HOSTING-GUIDE.md</b> for exact setup steps.</p>
+  </div>
+  <div class="settings-section">
+    <h3>💾 Export Data</h3>
+    <p class="mini" style="margin-bottom:12px">Download your platform data for backup or reporting (opens in Excel / Google Sheets).</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="exportShopsCSV()">🏪 Shops (CSV)</button>
+      <button class="btn btn-outline" onclick="exportInvoicesCSV()">🧾 Invoices (CSV)</button>
+      <button class="btn btn-primary" onclick="exportSaBackup()">⬇️ Full Backup (.json)</button>
+    </div>
+  </div>
+  <div class="settings-section">
+    <h3>⚠ Danger Zone</h3>
+    <button class="btn btn-outline" style="color:var(--err);border-color:var(--err)" onclick="if(confirm('Reset all demo data?')){['sa_shops','sa_plans','sa_verticals','sa_invoices','sa_settings','sa_seeded'].forEach(k=>localStorage.removeItem(k));location.reload()}">Reset Demo Data</button>
+  </div>`;
+}
+function saveSettings(){
+  DB.set('sa_settings',{platformName:document.getElementById('st-name').value,supportEmail:document.getElementById('st-email').value,currency:document.getElementById('st-cur').value});
+  toast('Settings saved','ok');
+}
+
+// ===== EXPORT =====
+function dl(filename,content,mime){const b=new Blob([content],{type:mime||'text/plain;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(u)},100)}
+function csvC(v){v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function csv(h,r){return '﻿'+[h.map(csvC).join(','),...r.map(x=>x.map(csvC).join(','))].join('\r\n')}
+function saStamp(){const d=new Date();const p=n=>String(n).padStart(2,'0');return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())}
+function exportShopsCSV(){
+  const shops=getShops();if(!shops.length){toast('No shops','warn');return}
+  const rows=shops.map(s=>{const pl=planById(s.planId),v=vertById(s.type);return[s.name,v.label,s.status,pl.name,pl.price||0,
+    s.ownerName||'',s.ownerEmail||'',s.phone||'',s.city||'',s.branches||1,s.users||1,s.monthlyOrders||0,s.monthlyRevenue||0,fmtDate(s.createdAt),(s.subdomain||'')+'.app']});
+  dl(`shops-${saStamp()}.csv`,csv(['Shop','Type','Status','Plan','MRR','Owner','Email','Phone','City','Branches','Users','Orders/mo','GMV/mo','Joined','Subdomain'],rows),'text/csv;charset=utf-8');
+  toast(`Exported ${shops.length} shops`,'ok');
+}
+function exportInvoicesCSV(){
+  const inv=getInvoices(),shops=getShops();if(!inv.length){toast('No invoices','warn');return}
+  const rows=inv.map(i=>{const s=shops.find(x=>x.id===i.shopId);return[i.no,s?s.name:'',i.plan,i.amount,fmtDate(i.date),i.status]});
+  dl(`invoices-${saStamp()}.csv`,csv(['Invoice','Shop','Plan','Amount','Date','Status'],rows),'text/csv;charset=utf-8');
+  toast(`Exported ${inv.length} invoices`,'ok');
+}
+function exportSaBackup(){
+  const data={_app:'RestroGenieCloud',_exportedAt:new Date().toISOString()};
+  ['sa_shops','sa_plans','sa_verticals','sa_invoices','sa_settings'].forEach(k=>data[k]=DB.get(k));
+  dl(`cloud-backup-${saStamp()}.json`,JSON.stringify(data,null,2),'application/json');
+  toast('Backup downloaded','ok');
+}
+
+// ===== SEED =====
+function seed(){
+  if(DB.get('sa_seeded'))return;
+  const plans=[
+    {id:'pl_free',name:'Free Trial',price:0,maxBranches:1,maxUsers:2,maxItems:50,featured:false,modules:['Billing','Menu','Daily sales']},
+    {id:'pl_starter',name:'Starter',price:499,maxBranches:1,maxUsers:3,maxItems:200,featured:false,modules:['Billing & GST','Menu','Reports','Receipt printing']},
+    {id:'pl_pro',name:'Pro',price:999,maxBranches:1,maxUsers:8,maxItems:-1,featured:true,modules:['Everything in Starter','Inventory & recipes','Online orders (Swiggy/Zomato)','KOT / KDS','Multi-user roles']},
+    {id:'pl_prem',name:'Premium',price:1999,maxBranches:-1,maxUsers:-1,maxItems:-1,featured:false,modules:['Everything in Pro','Multi-branch','All shop types','API access','Priority support']},
+  ];
+  setPlans(plans);
+  DB.set('sa_verticals',[
+    {type:'restaurant',label:'Restaurant / Cafe',icon:'🍽️',modules:['Table management','KOT & KDS','Recipe stock deduction','Online orders']},
+    {type:'retail',label:'Retail Store',icon:'🛍️',modules:['Barcode billing','Product variants','Stock & reorder','Customer loyalty']},
+    {type:'grocery',label:'Grocery / Kirana',icon:'🛒',modules:['Weight/loose items','Barcode','Credit (khata)','Supplier orders']},
+    {type:'pharmacy',label:'Pharmacy',icon:'💊',modules:['Batch & expiry tracking','Schedule-H log','Salt/composition search','Supplier orders']},
+  ]);
+  const cities=['Bengaluru','Mumbai','Delhi','Pune','Hyderabad','Chennai','Jaipur','Kochi','Indore','Surat'];
+  const names=[
+    ['Spice Garden','restaurant','pl_pro','Active'],['Burger Junction','restaurant','pl_starter','Active'],
+    ['Sharma Kirana Store','grocery','pl_starter','Active'],['MedPlus Care','pharmacy','pl_prem','Active'],
+    ['Trendy Threads','retail','pl_pro','Active'],['Cafe Mocha','restaurant','pl_free','Trial'],
+    ['FreshMart Grocery','grocery','pl_pro','Active'],['Apollo Pharmacy Pt','pharmacy','pl_starter','Suspended'],
+    ['Style Bazaar','retail','pl_starter','Active'],['Tandoori Nights','restaurant','pl_prem','Active'],
+    ['Daily Needs Store','grocery','pl_free','Trial'],['Wellness Chemist','pharmacy','pl_pro','Active'],
+  ];
+  const shops=names.map((n,i)=>{
+    const created=new Date(Date.now()-(i*6+3)*86400000).toISOString();
+    const st=n[3];
+    return{id:uid(),name:n[0],type:n[1],planId:n[2],status:st,
+      ownerName:['Rahul','Priya','Amit','Sneha','Vikram','Anita','Karthik','Deepa','Rohan','Meera','Suresh','Pooja'][i]+' '+['Sharma','Patel','Kumar','Reddy','Singh','Nair','Iyer','Gupta','Das','Joshi','Rao','Shah'][i],
+      ownerEmail:n[0].toLowerCase().replace(/[^a-z]/g,'')+'@gmail.com',
+      phone:'+91 98'+(700000000+Math.floor(Math.random()*99999999)),
+      city:cities[i%cities.length],createdAt:created,
+      trialEndsAt:new Date(Date.now()+(st==='Trial'?(7-i)*86400000:0)).toISOString(),
+      branches:n[2]==='pl_prem'?2+Math.floor(Math.random()*3):1,
+      users:1+Math.floor(Math.random()*6),
+      monthlyOrders:st==='Active'?300+Math.floor(Math.random()*2500):Math.floor(Math.random()*120),
+      monthlyRevenue:st==='Active'?80000+Math.floor(Math.random()*600000):Math.floor(Math.random()*30000),
+      subdomain:n[0].toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,18)};
+  });
+  setShops(shops);
+  // invoices for active shops (last 3 months)
+  const inv=[];let c=1001;
+  shops.filter(s=>s.status==='Active').forEach(s=>{
+    const pl=plans.find(p=>p.id===s.planId);
+    for(let m=2;m>=0;m--){if(!pl.price)continue;
+      inv.push({id:uid(),no:'INV-'+(c++),shopId:s.id,plan:pl.name,amount:pl.price,
+        date:new Date(Date.now()-m*30*86400000).toISOString(),status:m===0&&Math.random()<0.2?'Pending':'Paid'});
+    }
+  });
+  DB.set('sa_invoices',inv);
+  DB.set('sa_seeded',true);
+}
+
+// ===== INIT =====
+seed();
+if(DB.get('sa_session'))showApp();
+</script>
+</body>
+</html>
