@@ -148,7 +148,14 @@
       "Bash(node -e \"process.stdin.on\\('data',d=>{try{const j=JSON.parse\\(d\\);console.log\\('  url:',j.html_url||'\\(building\\)'\\);console.log\\('  status:',j.status||'building \\(takes ~1 min\\)'\\)}catch\\(e\\){console.log\\('  building...'\\)}}\\)\")",
       "Bash(node -e \"process.stdin.on\\('data',d=>{const j=JSON.parse\\(d\\);console.log\\('visibility:',j.visibility,'| private:',j.private\\)}\\)\")",
       "Bash(echo \"✓ deploy script syntax OK\")",
-      "Bash(git commit -q -m 'Support private-repo deploy \\(read-only token clone\\) + Netlify Drop demo *)"
+      "Bash(git commit -q -m 'Support private-repo deploy \\(read-only token clone\\) + Netlify Drop demo *)",
+      "Bash(echo \"=== files importing bcrypt ===\")",
+      "Bash(grep -rln \"from 'bcrypt'\" apps/api/src apps/api/prisma)",
+      "Bash(echo \"=== installing bcryptjs, removing bcrypt ===\")",
+      "Bash(echo \"=== anything still depend on native bcrypt? ===\")",
+      "Bash(npm ls *)",
+      "Bash(npm prune *)",
+      "Bash(node -e \"process.stdin.on\\('data',d=>{const j=JSON.parse\\(d\\);console.log\\('  login with bcryptjs:', j.accessToken?'✅ WORKS \\(verified native-bcrypt hash\\)':'result: '+JSON.stringify\\(j\\).slice\\(0,80\\)\\)}\\)\")"
     ]
   }
 }

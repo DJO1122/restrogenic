@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, NotFoundException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 
 const PLATFORM_SECRET = () => process.env.PLATFORM_JWT_SECRET || process.env.JWT_SECRET || 'platform-dev-secret';
