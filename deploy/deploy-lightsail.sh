@@ -8,7 +8,15 @@
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-$HOME/restrogenic}"
-REPO_URL="${REPO_URL:-https://github.com/YOUR_USERNAME/restrogenic.git}"
+REPO_OWNER="${REPO_OWNER:-DJO1122}"
+REPO_NAME="${REPO_NAME:-restrogenic}"
+# PRIVATE repo? Set REPO_TOKEN to a fine-grained GitHub PAT with "Contents: Read"
+# for this repo:  REPO_TOKEN=github_pat_xxx bash deploy/deploy-lightsail.sh
+if [ -n "${REPO_TOKEN:-}" ]; then
+  REPO_URL="https://x-access-token:${REPO_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.git"
+else
+  REPO_URL="${REPO_URL:-https://github.com/${REPO_OWNER}/${REPO_NAME}.git}"
+fi
 
 echo "==> 1/5  Installing Docker + Compose (if missing)"
 if ! command -v docker >/dev/null 2>&1; then

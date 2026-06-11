@@ -4,22 +4,24 @@ Three ways to put this online, from "instant demo" to "real SaaS business". Pick
 
 ---
 
-## ⚡ Option 1 — Instant demo (FREE, ~1 minute) via GitHub Pages
+## ⚡ Option 1 — Instant demo (FREE, ~30 sec) via Netlify Drop
 
 The self-contained HTML apps need **no server** — they run entirely in the browser
-(localStorage). Perfect for showing customers / investors today.
+(localStorage). Keeps your repo **private** while giving a public demo link.
 
-**Enable GitHub Pages** → repo **Settings → Pages → Source: `main` / root → Save.**
+1. Go to **https://app.netlify.com/drop**
+2. Drag the project folder (or just the 3 HTML files) onto the page
+3. You instantly get a live URL, e.g. `https://restrogenic-demo.netlify.app/restrogenic-pos.html`
 
-Your live links (≈1 min after enabling):
-| App | URL |
-|-----|-----|
-| POS (full single-shop POS) | `https://djo1122.github.io/restrogenic/restrogenic-pos.html` |
-| Super-Admin panel | `https://djo1122.github.io/restrogenic/saas/super-admin.html` |
-| Signup / pricing page | `https://djo1122.github.io/restrogenic/saas/signup.html` |
+| App | Path |
+|-----|------|
+| POS (full single-shop POS) | `/restrogenic-pos.html` |
+| Super-Admin panel | `/saas/super-admin.html` |
+| Signup / pricing page | `/saas/signup.html` |
 
-> The POS & Super-Admin are fully usable (localStorage). The Signup page needs the
-> backend (Option 2/3) for real account creation; without it, it's a live mockup.
+> POS & Super-Admin are fully usable (localStorage). The Signup page needs the live
+> backend (Option 2) for real account creation. *(GitHub Pages would also work but
+> requires making the repo public — Netlify Drop keeps it private.)*
 
 ---
 
@@ -42,11 +44,24 @@ api           A   <STATIC_IP>
 ```
 
 ### C. Deploy (SSH into the box)
+
+The repo is **private**, so first make a read-only token:
+GitHub → **Settings → Developer settings → Fine-grained tokens → Generate** →
+*Repository access:* only `restrogenic` → *Permissions:* **Contents → Read-only** → copy it.
+
 ```bash
-git clone https://github.com/DJO1122/restrogenic.git ~/restrogenic
-bash ~/restrogenic/deploy/deploy-lightsail.sh      # installs Docker, makes .env.prod w/ random secrets, then stops
-nano ~/restrogenic/deploy/.env.prod                # set DOMAIN=yourpos.com  (+ PLATFORM_ADMIN_PASSWORD if you want a chosen one)
+# clone the private repo with the token (one time)
+REPO_TOKEN=github_pat_XXXX bash <(curl -fsSL \
+  "https://x-access-token:github_pat_XXXX@raw.githubusercontent.com/DJO1122/restrogenic/main/deploy/deploy-lightsail.sh")
+# ↑ this installs Docker, clones, makes .env.prod with random secrets, then stops.
+
+nano ~/restrogenic/deploy/.env.prod                # set DOMAIN=yourpos.com (+ PLATFORM_ADMIN_PASSWORD optional)
 bash ~/restrogenic/deploy/deploy-lightsail.sh      # builds & starts everything
+```
+Simpler alternative — clone manually first, then run the script:
+```bash
+git clone https://x-access-token:github_pat_XXXX@github.com/DJO1122/restrogenic.git ~/restrogenic
+bash ~/restrogenic/deploy/deploy-lightsail.sh      # → edit .env.prod when it stops, then run again
 ```
 Caddy auto-issues HTTPS once DNS resolves (~1 min). Everything else (Postgres,
 migrations, RLS, admin+plans seed) runs automatically on first boot.

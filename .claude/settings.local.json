@@ -141,7 +141,14 @@
       "Bash(git ls-files *)",
       "Bash(grep -E \"\\(^|/\\)\\\\.env$|\\\\.env\\\\.local$|/\\\\.env\\\\.prod$|\\\\.db$|\\\\.pem$|\\\\.key$|id_rsa\")",
       "Bash(echo \"=== run seed \\(admin exists → safe path\\) ===\")",
-      "Bash(PLATFORM_ADMIN_EMAIL=\"newadmin$\\(date +%s\\)@test.com\" npx ts-node --transpile-only prisma/seed-saas.ts)"
+      "Bash(PLATFORM_ADMIN_EMAIL=\"newadmin$\\(date +%s\\)@test.com\" npx ts-node --transpile-only prisma/seed-saas.ts)",
+      "Bash(git commit -q -m 'Add GO-LIVE.md — instant demo + full deploy guide *)",
+      "Bash(tail -2)",
+      "Bash(echo \"=== Enabling GitHub Pages \\(main / root\\) ===\")",
+      "Bash(node -e \"process.stdin.on\\('data',d=>{try{const j=JSON.parse\\(d\\);console.log\\('  url:',j.html_url||'\\(building\\)'\\);console.log\\('  status:',j.status||'building \\(takes ~1 min\\)'\\)}catch\\(e\\){console.log\\('  building...'\\)}}\\)\")",
+      "Bash(node -e \"process.stdin.on\\('data',d=>{const j=JSON.parse\\(d\\);console.log\\('visibility:',j.visibility,'| private:',j.private\\)}\\)\")",
+      "Bash(echo \"✓ deploy script syntax OK\")",
+      "Bash(git commit -q -m 'Support private-repo deploy \\(read-only token clone\\) + Netlify Drop demo *)"
     ]
   }
 }
