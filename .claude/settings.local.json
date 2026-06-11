@@ -116,7 +116,32 @@
       "Bash(git init *)",
       "Bash(git check-ignore *)",
       "Bash(git add *)",
-      "Bash(grep -E \"\\\\.env$|\\\\.env\\\\.local|dev\\\\.db|\\\\.env\\\\.prod\")"
+      "Bash(grep -E \"\\\\.env$|\\\\.env\\\\.local|dev\\\\.db|\\\\.env\\\\.prod\")",
+      "Bash(echo \"=== files matching the sensitive pattern that are staged ===\")",
+      "Bash(git status *)",
+      "Bash(grep -E \"\\(^|/\\)\\\\.env$|\\\\.env\\\\.local$|/\\\\.env\\\\.prod$|dev\\\\.db$\")",
+      "Bash(git config *)",
+      "Bash(git commit -q -m 'RestroGenie: multi-tenant restaurant POS SaaS *)",
+      "Bash(which gh *)",
+      "Bash(gh auth *)",
+      "Bash(echo \"=== existing git remote ===\")",
+      "Bash(git remote *)",
+      "Bash(echo \" none\")",
+      "Bash(echo \"\")",
+      "Bash(echo \"=== SSH keys present? ===\")",
+      "Bash(echo \"=== env tokens? ===\")",
+      "Bash(env)",
+      "Bash(git credential-osxkeychain *)",
+      "Bash(git branch *)",
+      "Bash(echo \"=== pushing to GitHub \\(uses cached keychain token\\) ===\")",
+      "Bash(git push *)",
+      "Bash(printf \"protocol=https\\\\nhost=github.com\\\\n\\\\n\")",
+      "Bash(node -e \"process.stdin.on\\('data',d=>{const j=JSON.parse\\(d\\);console.log\\('  '+j.full_name,'\\('+\\(j.private?'private':'public'\\)+'\\)'\\);console.log\\('  default branch:',j.default_branch\\);console.log\\('  url:',j.html_url\\)}\\)\")",
+      "Bash(echo \"=== 1. Real secret/env files tracked? \\(must be NONE\\) ===\")",
+      "Bash(git ls-files *)",
+      "Bash(grep -E \"\\(^|/\\)\\\\.env$|\\\\.env\\\\.local$|/\\\\.env\\\\.prod$|\\\\.db$|\\\\.pem$|\\\\.key$|id_rsa\")",
+      "Bash(echo \"=== run seed \\(admin exists → safe path\\) ===\")",
+      "Bash(PLATFORM_ADMIN_EMAIL=\"newadmin$\\(date +%s\\)@test.com\" npx ts-node --transpile-only prisma/seed-saas.ts)"
     ]
   }
 }

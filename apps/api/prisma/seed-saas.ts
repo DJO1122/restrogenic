@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -7,20 +8,28 @@ async function main() {
   console.log('Seeding SaaS control plane...');
 
   // ── Platform super-admin (YOU) ──
-  const adminEmail = 'admin@restrogenic.cloud';
+  // Credentials come from env. If PLATFORM_ADMIN_PASSWORD is unset we generate a
+  // strong random one and print it ONCE in the boot logs — never a public default.
+  const adminEmail = process.env.PLATFORM_ADMIN_EMAIL || 'admin@restrogenic.cloud';
   const existing = await prisma.platformAdmin.findUnique({ where: { email: adminEmail } });
   if (!existing) {
+    const adminPw = process.env.PLATFORM_ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url');
     await prisma.platformAdmin.create({
       data: {
         name: 'Platform Owner',
         email: adminEmail,
-        passwordHash: await bcrypt.hash('admin123', 12),
+        passwordHash: await bcrypt.hash(adminPw, 12),
         role: 'admin',
       },
     });
-    console.log('  ✓ Platform admin: admin@restrogenic.cloud / admin123');
+    console.log('  ✓ Platform admin created:');
+    console.log(`      email:    ${adminEmail}`);
+    console.log(`      password: ${adminPw}`);
+    if (!process.env.PLATFORM_ADMIN_PASSWORD) {
+      console.log('      ^ randomly generated — SAVE IT (set PLATFORM_ADMIN_PASSWORD to choose your own).');
+    }
   } else {
-    console.log('  • Platform admin already exists');
+    console.log('  • Platform admin already exists (password unchanged)');
   }
 
   // ── Subscription plans ──
