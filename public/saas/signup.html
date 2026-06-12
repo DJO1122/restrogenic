@@ -107,7 +107,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="ic">🎉</div>
         <h2 id="s-title">Your shop is ready!</h2>
         <p style="color:var(--mut)">Your POS address:</p>
-        <div class="url" id="s-url">spice.yourpos.com</div>
+        <div class="url" id="s-url">spice.restrogenic.shop</div>
         <p style="color:var(--mut);font-size:14px" id="s-trial"></p>
         <button class="btn" onclick="goToPos()">Open my POS →</button>
         <div class="fine" id="s-token"></div>
@@ -119,7 +119,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="apiwarn">API: <input id="api-url" value="http://localhost:3001" onchange="API=this.value"></div>
 
 <script>
-let API='http://localhost:3001';
+// Auto-detect: on restrogenic.shop use the live API, otherwise local dev
+let API=location.hostname.endsWith('restrogenic.shop')?'https://api.restrogenic.shop':'http://localhost:3001';
 let selectedPlan=null;
 let lastSignup=null;
 
@@ -179,7 +180,7 @@ function showSuccess(d){
   document.getElementById('form-view').style.display='none';
   document.getElementById('success-view').style.display='block';
   document.getElementById('s-title').textContent='Welcome, '+(d.user&&d.user.name||'')+'! 🎉';
-  document.getElementById('s-url').textContent=(d.subdomain||'shop')+'.yourpos.com';
+  document.getElementById('s-url').textContent=(d.subdomain||'shop')+'.restrogenic.shop';
   if(d.trialEndsAt){
     const days=Math.ceil((new Date(d.trialEndsAt)-new Date())/86400000);
     document.getElementById('s-trial').textContent=`Your ${days}-day free trial is active. We've set up your menu & tables.`;
@@ -189,10 +190,11 @@ function showSuccess(d){
   document.getElementById('s-token').innerHTML='Logged in — token saved.';
 }
 function goToPos(){
-  // In production this redirects to https://<subdomain>.yourpos.com with the session.
-  alert('In production this opens your POS at '+(lastSignup&&lastSignup.subdomain||'your')+'.yourpos.com — already logged in.\n\nYour access token is saved in localStorage (rg_signup_token).');
+  // In production this redirects to https://<subdomain>.restrogenic.shop with the session.
+  alert('In production this opens your POS at '+(lastSignup&&lastSignup.subdomain||'your')+'.restrogenic.shop — already logged in.\n\nYour access token is saved in localStorage (rg_signup_token).');
 }
 
+document.getElementById('api-url').value=API;
 loadPlans();
 </script>
 </body>

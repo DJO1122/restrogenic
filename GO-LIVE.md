@@ -37,10 +37,10 @@ The real multi-tenant backend + database + auto-HTTPS. One $10 box.
 ### B. Point a domain at it
 Buy a domain, then add DNS **A records** → your static IP:
 ```
-yourpos.com   A   <STATIC_IP>
+restrogenic.shop   A   <STATIC_IP>
 www           A   <STATIC_IP>
 api           A   <STATIC_IP>
-*             A   <STATIC_IP>     ← shop subdomains (spice.yourpos.com)
+*             A   <STATIC_IP>     ← shop subdomains (spice.restrogenic.shop)
 ```
 
 ### C. Deploy (SSH into the box)
@@ -55,7 +55,7 @@ REPO_TOKEN=github_pat_XXXX bash <(curl -fsSL \
   "https://x-access-token:github_pat_XXXX@raw.githubusercontent.com/DJO1122/restrogenic/main/deploy/deploy-lightsail.sh")
 # ↑ this installs Docker, clones, makes .env.prod with random secrets, then stops.
 
-nano ~/restrogenic/deploy/.env.prod                # set DOMAIN=yourpos.com (+ PLATFORM_ADMIN_PASSWORD optional)
+nano ~/restrogenic/deploy/.env.prod                # set DOMAIN=restrogenic.shop (+ PLATFORM_ADMIN_PASSWORD optional)
 bash ~/restrogenic/deploy/deploy-lightsail.sh      # builds & starts everything
 ```
 Simpler alternative — clone manually first, then run the script:
@@ -72,14 +72,14 @@ cd ~/restrogenic/deploy
 sudo docker compose -f docker-compose.prod.yml ps          # all "Up"
 sudo docker compose -f docker-compose.prod.yml logs api | grep "Platform admin"   # grab your generated admin password
 ```
-- App → `https://yourpos.com` · API → `https://api.yourpos.com`
+- App → `https://restrogenic.shop` · API → `https://api.restrogenic.shop`
 - Log into the super-admin with the email/password from the logs.
 - Set `SEED_ON_BOOT=false` in `.env.prod`, then `sudo docker compose -f docker-compose.prod.yml up -d`.
 
 ### E. Take payments (when ready)
 In `.env.prod`: set `RAZORPAY_KEY_ID/SECRET/WEBHOOK_SECRET`, map your plan ids
 (`RAZORPAY_PLAN_PL_STARTER/PRO/PREM`), register the webhook
-`https://api.yourpos.com/api/webhooks/razorpay`. Restart: `up -d`.
+`https://api.restrogenic.shop/api/webhooks/razorpay`. Restart: `up -d`.
 
 ### F. Operations
 - **Backups:** Lightsail → enable **automatic snapshots**.
@@ -112,7 +112,7 @@ once you have real customers.
 |---------|-----|
 | `https://` not working | DNS not resolved yet — wait 1–2 min; check A records point to the static IP |
 | API container restarting | `docker compose logs api` — usually a missing env var in `.env.prod` |
-| "Not allowed by CORS" | set `CORS_ORIGIN=https://*.yourpos.com,https://yourpos.com` in `.env.prod` |
+| "Not allowed by CORS" | set `CORS_ORIGIN=https://*.restrogenic.shop,https://restrogenic.shop` in `.env.prod` |
 | Can't log into super-admin | password is in the API boot logs (`logs api | grep Platform`) |
 | Razorpay webhook 401 | `RAZORPAY_WEBHOOK_SECRET` must match the value in the Razorpay dashboard |
 

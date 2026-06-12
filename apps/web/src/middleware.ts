@@ -14,7 +14,7 @@ import type { NextRequest } from "next/server";
  * is still authorized by the JWT's restaurantId (defense in depth) — the
  * subdomain is for routing/branding and to pre-fill the right shop context.
  */
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "yourpos.com";
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "restrogenic.shop";
 
 function getSubdomain(host: string): string | null {
   const hostname = host.split(":")[0]; // strip port

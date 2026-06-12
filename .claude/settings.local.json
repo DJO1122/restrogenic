@@ -155,7 +155,27 @@
       "Bash(echo \"=== anything still depend on native bcrypt? ===\")",
       "Bash(npm ls *)",
       "Bash(npm prune *)",
-      "Bash(node -e \"process.stdin.on\\('data',d=>{const j=JSON.parse\\(d\\);console.log\\('  login with bcryptjs:', j.accessToken?'✅ WORKS \\(verified native-bcrypt hash\\)':'result: '+JSON.stringify\\(j\\).slice\\(0,80\\)\\)}\\)\")"
+      "Bash(node -e \"process.stdin.on\\('data',d=>{const j=JSON.parse\\(d\\);console.log\\('  login with bcryptjs:', j.accessToken?'✅ WORKS \\(verified native-bcrypt hash\\)':'result: '+JSON.stringify\\(j\\).slice\\(0,80\\)\\)}\\)\")",
+      "Bash(echo \"=== run the Vercel build script locally ===\")",
+      "Bash(bash deploy/vercel-static-build.sh)",
+      "Bash(echo \"=== verify public/ contents ===\")",
+      "Bash(find public *)",
+      "Bash(grep -q \"^public$\\\\|^public/$\\\\|/public\" .gitignore)",
+      "Bash(git commit -q -m 'Add vercel.json: serve static HTML demo \\(no turbo build\\) *)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json','utf8'\\)\\);JSON.parse\\(require\\('fs'\\).readFileSync\\('vercel.json','utf8'\\)\\);console.log\\('✓ package.json + vercel.json valid'\\)\")",
+      "Bash(git commit -q -m 'Add packageManager field to root package.json \\(fixes turbo workspace resolution\\) *)",
+      "Bash(echo \"=== confirm script is committed in HEAD ===\")",
+      "Bash(git commit --allow-empty -q -m 'Trigger fresh Vercel deploy of latest commit *)",
+      "Bash(sed -i '' '/^public\\\\/$/d' .gitignore)",
+      "Bash(git commit -q -m 'Commit pre-built static demo \\(public/\\) — zero-build deploys *)",
+      "Bash(sed -i '' 's/DOMAIN=yourpos.com/DOMAIN=restrogenic.shop/' deploy/.env.prod.example)",
+      "Bash(sed -i '' 's|CORS_ORIGIN=https://\\\\*.yourpos.com|CORS_ORIGIN=https://*.restrogenic.shop,https://restrogenic.shop|' deploy/.env.prod.example)",
+      "Bash(sed -i '' 's/PLATFORM_ADMIN_EMAIL=admin@yourpos.com/PLATFORM_ADMIN_EMAIL=admin@restrogenic.shop/' deploy/.env.prod.example)",
+      "Bash(grep -E \"^DOMAIN|^CORS|^PLATFORM_ADMIN_EMAIL\" deploy/.env.prod.example)",
+      "Bash(sed -i '' 's/NEXT_PUBLIC_ROOT_DOMAIN || \"yourpos.com\"/NEXT_PUBLIC_ROOT_DOMAIN || \"restrogenic.shop\"/' apps/web/src/middleware.ts)",
+      "Bash(grep \"restrogenic.shop\" apps/web/src/middleware.ts)",
+      "Bash(sed -i '' 's/\\\\.yourpos\\\\.com/.restrogenic.shop/g' saas/signup.html)",
+      "Bash(sed -i '' 's/yourdomain\\\\.com/restrogenic.shop/g; s/yourpos\\\\.com/restrogenic.shop/g' GO-LIVE.md deploy/README.md)"
     ]
   }
 }

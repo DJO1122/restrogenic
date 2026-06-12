@@ -28,10 +28,10 @@ runs migrations, and (first boot) seeds the platform admin + plans.
 ### 2. Point your domain at the box
 In your DNS (Route 53 or Cloudflare), add **A records** → the static IP:
 ```
-yourpos.com        A   <STATIC_IP>
-www.yourpos.com    A   <STATIC_IP>
-api.yourpos.com    A   <STATIC_IP>
-*.yourpos.com      A   <STATIC_IP>   # for shop subdomains
+restrogenic.shop        A   <STATIC_IP>
+www.restrogenic.shop    A   <STATIC_IP>
+api.restrogenic.shop    A   <STATIC_IP>
+*.restrogenic.shop      A   <STATIC_IP>   # for shop subdomains
 ```
 
 ### 3. Deploy
@@ -42,7 +42,7 @@ git clone https://github.com/YOU/restrogenic.git ~/restrogenic
 bash ~/restrogenic/deploy/deploy-lightsail.sh
 # → it creates deploy/.env.prod with auto-generated secrets and stops.
 
-nano ~/restrogenic/deploy/.env.prod      # set DOMAIN=yourpos.com
+nano ~/restrogenic/deploy/.env.prod      # set DOMAIN=restrogenic.shop
 bash ~/restrogenic/deploy/deploy-lightsail.sh   # run again → builds & starts
 ```
 
@@ -52,7 +52,7 @@ cd ~/restrogenic/deploy
 sudo docker compose -f docker-compose.prod.yml ps          # all "Up"
 sudo docker compose -f docker-compose.prod.yml logs -f api  # watch boot/migrations
 ```
-- App → `https://yourpos.com`
+- App → `https://restrogenic.shop`
 - Super-admin login → `admin@restrogenic.cloud` / `admin123` → **change this immediately**
 - After first successful boot, set `SEED_ON_BOOT=false` in `.env.prod` and `up -d` again.
 
@@ -68,11 +68,11 @@ A daily cron must suspend trials that ended without paying. Add to the box's cro
 
 ```cron
 # every day at 02:00 — suspend expired trials
-0 2 * * * TOKEN=$(curl -s -X POST https://api.yourpos.com/api/admin/login \
+0 2 * * * TOKEN=$(curl -s -X POST https://api.restrogenic.shop/api/admin/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"admin@restrogenic.cloud","password":"YOUR_ADMIN_PW"}' \
   | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p'); \
-  curl -s -X POST https://api.yourpos.com/api/admin/billing/expire-trials \
+  curl -s -X POST https://api.restrogenic.shop/api/admin/billing/expire-trials \
   -H "Authorization: Bearer $TOKEN" >> /var/log/restrogenic-cron.log 2>&1
 ```
 (Or store an admin token in a file and reuse it.) Razorpay webhooks handle the rest:
@@ -80,9 +80,9 @@ A daily cron must suspend trials that ended without paying. Add to the box's cro
 
 ---
 
-## Wildcard subdomains (`spice.yourpos.com`)
+## Wildcard subdomains (`spice.restrogenic.shop`)
 Caddy auto-issues a cert **per hostname** out of the box — so adding shops one-by-one in
-the `Caddyfile` "just works". For a true `*.yourpos.com` wildcard cert (no per-shop edit),
+the `Caddyfile` "just works". For a true `*.restrogenic.shop` wildcard cert (no per-shop edit),
 use the **Cloudflare DNS-challenge** build of Caddy and the commented block in `Caddyfile`
 (needs `CLOUDFLARE_API_TOKEN`). Simplest start: keep the root + api hosts, and resolve the
 tenant from the `Host` header in Next.js middleware (see `../saas/ARCHITECTURE.md`).
