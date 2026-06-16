@@ -182,7 +182,17 @@
       "Bash(dig NS restrogenic.shop @a.nic.shop +short)",
       "Bash(dig +trace NS restrogenic.shop)",
       "Bash(dig A restrogenic.shop +short)",
-      "Bash(git commit -q -m 'Add amplify.yml: publish prebuilt public/ \\(no build, fixes Amplify deploy\\) *)"
+      "Bash(git commit -q -m 'Add amplify.yml: publish prebuilt public/ \\(no build, fixes Amplify deploy\\) *)",
+      "Bash(echo \"=== AI mentions ===\")",
+      "Bash(grep -rin \"AI-powered\\\\|AI powered\\\\|ai-native\\\\|AI-native\\\\|powered by AI\\\\|artificial intelligence\" restrogenic-pos.html saas/signup.html saas/super-admin.html deploy/vercel-static-build.sh)",
+      "Bash(grep -rin \"AI\" restrogenic-pos.html saas/signup.html)",
+      "Bash(echo \"POS root:\")",
+      "Bash(grep -o \"\\\\-\\\\-ac:#[0-9a-f]*;--ac2:#[0-9a-f]*\" restrogenic-pos.html)",
+      "Bash(sed -i '' 's/--ac:#f97316;--ac2:#ea6c0a/--ac:#059669;--ac2:#047857/' restrogenic-pos.html)",
+      "Bash(sed -i '' 's/25 95% 53%/160 84% 39%/g' restrogenic-pos.html)",
+      "Bash(sed -i '' 's/--ac:#6366f1;--ac2:#4f46e5/--ac:#059669;--ac2:#047857/' saas/super-admin.html)",
+      "Bash(sed -i '' 's/linear-gradient\\(135deg,#6366f1,#a855f7\\)/linear-gradient\\(135deg,#10b981,#059669\\)/g' saas/super-admin.html)",
+      "Bash(sed -i '' 's/linear-gradient\\(135deg,#1e1b4b,#312e81\\)/linear-gradient\\(135deg,#064e3b,#065f46\\)/g' saas/super-admin.html)"
     ]
   }
 }
