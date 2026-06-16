@@ -1,0 +1,16 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "No install — serving the pre-built static site"
+    build:
+      commands:
+        - echo "Publishing pre-built public/ folder (no build needed)"
+  artifacts:
+    # public/ is committed to the repo and already contains the finished site
+    baseDirectory: public
+    files:
+      - '**/*'
+  cache:
+    paths: []

@@ -175,7 +175,14 @@
       "Bash(sed -i '' 's/NEXT_PUBLIC_ROOT_DOMAIN || \"yourpos.com\"/NEXT_PUBLIC_ROOT_DOMAIN || \"restrogenic.shop\"/' apps/web/src/middleware.ts)",
       "Bash(grep \"restrogenic.shop\" apps/web/src/middleware.ts)",
       "Bash(sed -i '' 's/\\\\.yourpos\\\\.com/.restrogenic.shop/g' saas/signup.html)",
-      "Bash(sed -i '' 's/yourdomain\\\\.com/restrogenic.shop/g; s/yourpos\\\\.com/restrogenic.shop/g' GO-LIVE.md deploy/README.md)"
+      "Bash(sed -i '' 's/yourdomain\\\\.com/restrogenic.shop/g; s/yourpos\\\\.com/restrogenic.shop/g' GO-LIVE.md deploy/README.md)",
+      "Bash(echo \"=== What nameservers does restrogenic.shop use right now? ===\")",
+      "Bash(dig NS restrogenic.shop +short)",
+      "Bash(echo \"=== What the .shop registry says \\(authoritative\\) ===\")",
+      "Bash(dig NS restrogenic.shop @a.nic.shop +short)",
+      "Bash(dig +trace NS restrogenic.shop)",
+      "Bash(dig A restrogenic.shop +short)",
+      "Bash(git commit -q -m 'Add amplify.yml: publish prebuilt public/ \\(no build, fixes Amplify deploy\\) *)"
     ]
   }
 }
