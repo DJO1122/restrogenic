@@ -9,6 +9,17 @@ async function bootstrap() {
     rawBody: true, // needed to verify Razorpay webhook signatures over the raw body
   });
 
+  // Security headers (no extra dep — covers the common OWASP set)
+  app.use((req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    res.removeHeader('X-Powered-By');
+    next();
+  });
+
   app.setGlobalPrefix('api');
 
   app.useGlobalPipes(
