@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RestroGenie POS</title>
 <style>
-:root{--sb:#1e293b;--sb2:#0f172a;--ac:#059669;--ac2:#047857;--bg:#f1f5f9;--card:#fff;--txt:#1e293b;--mut:#64748b;--bdr:#e2e8f0;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--ok-bg:#dcfce7;--warn-bg:#fef3c7;--err-bg:#fee2e2}
+:root{--sb:#1e293b;--sb2:#0f172a;--ac:#059669;--ac2:#047857;--bg:#f1f5f9;--bg2:#f8fafc;--card:#fff;--txt:#1e293b;--mut:#64748b;--bdr:#e2e8f0;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--ok-bg:#dcfce7;--warn-bg:#fef3c7;--err-bg:#fee2e2}
+/* Dark theme — toggle via body.dark (persisted) */
+body.dark{--bg:#0b1220;--bg2:#131c2e;--card:#1a2436;--txt:#e2e8f0;--mut:#94a3b8;--bdr:#2a3548;--ok-bg:#0a2e1e;--warn-bg:#3a2c08;--err-bg:#3a1414}
+body.dark input,body.dark select,body.dark textarea{background:#131c2e;color:#e2e8f0}
+body.dark .menu-card{background:#1a2436}
+body.dark th{color:#94a3b8}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);display:flex;height:100vh;overflow:hidden}
 /* ===== SIDEBAR ===== */
@@ -47,10 +52,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* ===== TABLES ===== */
 .tbl-wrap{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-th{background:#f8fafc;padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--bdr)}
+th{background:var(--bg2);padding:10px 14px;text-align:left;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--bdr)}
 td{padding:10px 14px;font-size:13.5px;border-bottom:1px solid var(--bdr)}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#f8fafc}
+tr:hover td{background:var(--bg2)}
 /* ===== FORMS ===== */
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
 .form-group{display:flex;flex-direction:column;gap:5px}
@@ -111,7 +116,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 
 .oi-del{background:none;border:none;color:var(--mut);cursor:pointer;padding:4px;border-radius:4px}.oi-del:hover{color:var(--err)}
 .op-empty{text-align:center;padding:40px 20px;color:var(--mut)}
 .op-empty .icon{font-size:40px;margin-bottom:12px}
-.op-totals{padding:12px 16px;border-top:1px solid var(--bdr);background:#f8fafc;flex-shrink:0}
+.op-totals{padding:12px 16px;border-top:1px solid var(--bdr);background:var(--bg2);flex-shrink:0}
 .tot-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--mut)}
 .tot-row.grand{font-size:16px;font-weight:700;color:var(--txt);padding-top:8px;margin-top:4px;border-top:2px dashed var(--bdr)}
 .discount-row{display:flex;align-items:center;gap:6px;margin:6px 0}
@@ -231,6 +236,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 
     <div class="page-title" id="page-title">Dashboard</div>
     <div class="meta">
       <span id="tb-time"></span>
+      <button id="dark-toggle" onclick="toggleDark()" title="Toggle dark mode" aria-label="Toggle dark mode"
+        style="background:none;border:1.5px solid var(--bdr);color:var(--txt);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.15s">🌙</button>
       <span id="tb-shift" style="background:var(--ac);color:#fff;padding:3px 10px;border-radius:6px;font-size:12px"></span>
     </div>
   </div>
@@ -504,6 +511,7 @@ function renderBilling(){
   <div id="menu-panel">
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <input class="search-input" placeholder="🔍 Search menu..." style="flex:1" oninput="menuFilter.search=this.value;renderBilling()" value="${escH(menuFilter.search)}">
+      <button class="btn btn-outline btn-sm" onclick="openRecall()" title="Recall a held bill">📥 Held (${getHeldBills().length})</button>
       <button class="btn btn-outline btn-sm" onclick="currentOrder=[];currentTable='';currentDiscount={val:0,type:'%'};renderBilling();toast('Cart cleared')">🗑 Clear</button>
     </div>
     <div class="cat-tabs">
@@ -544,8 +552,9 @@ function renderBilling(){
         </div>
       </div>
       <div class="action-btns">
+        <button class="btn btn-outline" onclick="holdBill()" title="Park this bill to recall later">⏸ Hold</button>
         <button class="btn btn-outline" onclick="doKOT()">🖨 KOT</button>
-        <button class="btn btn-primary" onclick="doSaveBill()">💾 Save & Print Bill</button>
+        <button class="btn btn-primary" onclick="doSaveBill()">💾 Save & Print</button>
       </div>
     </div>
   </div>
@@ -615,6 +624,71 @@ function changeQty(idx,delta){
   refreshTotals();
 }
 function removeItem(idx){currentOrder.splice(idx,1);refreshTotals()}
+
+// ===== DARK MODE =====
+function applyDark(){
+  const on=DB.get('darkMode',false);
+  document.body.classList.toggle('dark',on);
+  const b=document.getElementById('dark-toggle');
+  if(b)b.textContent=on?'☀️':'🌙';
+}
+function toggleDark(){
+  DB.set('darkMode',!DB.get('darkMode',false));
+  applyDark();
+}
+
+// ===== HOLD / RECALL BILLS =====
+function getHeldBills(){return DB.get('heldBills',[])}
+function saveHeldBills(h){DB.set('heldBills',h)}
+function holdBill(){
+  if(!currentOrder.length){toast('Add items first','warn');return}
+  const held=getHeldBills();
+  held.unshift({
+    id:'H'+Date.now(),
+    table:currentTable||'Walk-in',
+    type:currentOrderType,
+    payMode:currentPayMode,
+    items:currentOrder.map(i=>({...i})),
+    discount:{...currentDiscount},
+    total:calcOrder(currentOrder,currentDiscount.val,currentDiscount.type).total,
+    heldAt:nowISO(),
+  });
+  saveHeldBills(held);
+  currentOrder=[];currentTable='';currentDiscount={val:0,type:'%'};
+  toast('Bill held','ok');
+  renderBilling();
+}
+function openRecall(){
+  const held=getHeldBills();
+  openModal(`<div class="modal-hdr"><h3>📥 Held Bills (${held.length})</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+  ${held.length?held.map(h=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--bdr);border-radius:10px;margin-bottom:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px">${escH(h.table)} <span class="badge" style="background:var(--bg2);font-weight:500">${escH(h.type)}</span></div>
+        <div style="font-size:12px;color:var(--mut)">${(h.items||[]).reduce((a,i)=>a+i.qty,0)} items · ${fmtAmt(h.total)} · ${fmtTime(h.heldAt)}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="recallBill('${h.id}')">Recall</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteHeld('${h.id}')">🗑</button>
+    </div>`).join(''):`<div style="text-align:center;padding:30px;color:var(--mut)">No held bills</div>`}`);
+}
+function recallBill(id){
+  if(currentOrder.length && !confirm('Current cart has items — replace with the held bill?'))return;
+  const held=getHeldBills();
+  const h=held.find(x=>x.id===id);
+  if(!h)return;
+  currentOrder=h.items.map(i=>({...i}));
+  currentTable=h.table==='Walk-in'?'':h.table;
+  currentOrderType=h.type;currentPayMode=h.payMode||'Cash';
+  currentDiscount=h.discount||{val:0,type:'%'};
+  saveHeldBills(held.filter(x=>x.id!==id));
+  closeModal();toast('Bill recalled','ok');
+  navigate('billing');
+}
+function deleteHeld(id){
+  if(!confirm('Delete this held bill?'))return;
+  saveHeldBills(getHeldBills().filter(x=>x.id!==id));
+  openRecall();
+}
 
 function doKOT(){
   if(!currentOrder.length){toast('Add items first','warn');return}
@@ -1815,7 +1889,7 @@ function olRenderCart(){
       </tbody>
     </table>
   </div>
-  <div style="background:#f8fafc;border-radius:8px;padding:10px 14px;margin-top:8px">
+  <div style="background:var(--bg2);border-radius:8px;padding:10px 14px;margin-top:8px">
     <div class="tot-row"><span>Subtotal</span><span>${fmtAmt(calc.subtotal)}</span></div>
     ${calc.discAmt>0?`<div class="tot-row" style="color:var(--ok)"><span>Discount</span><span>-${fmtAmt(calc.discAmt)}</span></div>`:''}
     <div class="tot-row"><span>SGST + CGST</span><span>${fmtAmt(calc.sgstAmt+calc.cgstAmt)}</span></div>
@@ -1916,7 +1990,7 @@ function custCheckout(){
     <div class="form-group"><label>Phone *</label><input id="cust-phone" placeholder="Phone"></div>
     <div class="form-group" style="grid-column:1/-1"><label>Table No. / Delivery Address</label><input id="cust-addr" placeholder="e.g. Table 5 / 123 Main St"></div>
   </div>
-  <div style="background:#f8fafc;border-radius:8px;padding:12px;margin:12px 0">
+  <div style="background:var(--bg2);border-radius:8px;padding:12px;margin:12px 0">
     <div class="tot-row"><span>Subtotal</span><span>${fmtAmt(calc.subtotal)}</span></div>
     <div class="tot-row"><span>Taxes</span><span>${fmtAmt(calc.sgstAmt+calc.cgstAmt)}</span></div>
     <div class="tot-row grand"><span>To Pay</span><span>${fmtAmt(calc.total)}</span></div>
@@ -1981,6 +2055,7 @@ function updateClock(){
     renderCustomerOrder();
     return;
   }
+  applyDark();
   updateClock();
   setInterval(updateClock,30000);
   navigate('dashboard');
