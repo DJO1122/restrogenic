@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RestroGenie POS</title>
 <style>
+/* Tamil script — Noto Sans Tamil with robust system fallbacks (renders offline too) */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&display=swap');
 :root{--sb:#1e293b;--sb2:#0f172a;--ac:#059669;--ac2:#047857;--bg:#f1f5f9;--bg2:#f8fafc;--card:#fff;--txt:#1e293b;--mut:#64748b;--bdr:#e2e8f0;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--ok-bg:#dcfce7;--warn-bg:#fef3c7;--err-bg:#fee2e2}
 /* Dark theme — toggle via body.dark (persisted) */
 body.dark{--bg:#0b1220;--bg2:#131c2e;--card:#1a2436;--txt:#e2e8f0;--mut:#94a3b8;--bdr:#2a3548;--ok-bg:#0a2e1e;--warn-bg:#3a2c08;--err-bg:#3a1414}
@@ -96,6 +98,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 
 .mc-veg.veg{color:var(--ok)}.mc-veg.nv{color:var(--err)}
 .mc-veg::after{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
 /* Order panel */
+/* Tamil name rendering */
+.ta,.mc-ta,.oi-ta{font-family:'Noto Sans Tamil','Latha','Nirmala UI','Tamil Sangam MN',sans-serif}
+/* Menu-card numeric shortcut code (prominent, top-right) */
+.menu-card{position:relative}
+.menu-card .mc-code{position:absolute;top:8px;right:8px;background:var(--ac);color:#fff;font-weight:800;font-size:15px;line-height:1;padding:3px 7px;border-radius:7px;min-width:26px;text-align:center;letter-spacing:.5px}
+.menu-card .mc-ta{font-family:'Noto Sans Tamil','Latha','Nirmala UI','Tamil Sangam MN',sans-serif;font-weight:600;font-size:14px;line-height:1.35;margin-bottom:1px;padding-right:30px}
+.menu-card .mc-name{padding-right:30px}
+/* ITEM CODE indicator near the cart */
+.code-box{margin:10px 16px 0;padding:10px 12px;border:2px dashed var(--bdr);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;transition:.15s;background:var(--bg2)}
+.code-box.active{border-color:var(--ac);border-style:solid;box-shadow:0 0 0 3px rgba(5,150,105,.12)}
+.code-box .code-label{font-size:11px;color:var(--mut);font-weight:600;line-height:1.3}
+.code-box .code-label b{color:var(--ac)}
+.code-box .code-val{font-family:'Courier New',monospace;font-weight:800;font-size:26px;letter-spacing:2px;color:var(--txt);min-width:64px;text-align:center;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:2px 10px}
+.code-box.active .code-val{color:var(--ac)}
+.oi-ta{font-weight:600;font-size:13px}
 .op-hdr{padding:12px 16px;border-bottom:1px solid var(--bdr);flex-shrink:0}
 .op-hdr input,.op-hdr select{width:100%;padding:8px 10px;font-size:13px;margin-bottom:8px}
 .otype-btns{display:flex;gap:6px}
@@ -504,7 +521,8 @@ function renderBilling(){
   document.getElementById('content').style.padding='0';
   const menu=getMenu().filter(i=>i.available!==false);
   const cats=['All',...getCategories()];
-  const filtered=menu.filter(i=>(menuFilter.cat==='All'||i.category===menuFilter.cat)&&(!menuFilter.search||i.name.toLowerCase().includes(menuFilter.search.toLowerCase())));
+  const q=(menuFilter.search||'').trim();const ql=q.toLowerCase();
+  const filtered=menu.filter(i=>(menuFilter.cat==='All'||i.category===menuFilter.cat)&&(!q||i.name.toLowerCase().includes(ql)||(i.name_ta||'').includes(q)||String(i.code||'').includes(ql)));
 
   document.getElementById('content').innerHTML=`
 <div id="billing-wrap">
@@ -520,10 +538,12 @@ function renderBilling(){
     <div class="menu-grid">
       ${filtered.length?filtered.map(item=>`
       <div class="menu-card${item.available===false?' unavail':''}" onclick="addToOrder('${item.id}')">
+        ${item.code!=null&&item.code!==''?`<div class="mc-code">${escH(String(item.code).padStart(2,'0'))}</div>`:''}
         <div style="display:flex;align-items:center;margin-bottom:6px">
           <div class="mc-veg ${item.isVeg?'veg':'nv'}"></div>
           <span class="mc-cat">${escH(item.category)}</span>
         </div>
+        ${item.name_ta?`<div class="mc-ta">${escH(item.name_ta)}</div>`:''}
         <div class="mc-name">${escH(item.name)}</div>
         <div class="mc-price">${fmtAmt(item.price)}</div>
         ${item.tax?`<div style="font-size:10px;color:var(--mut)">GST ${item.tax}%</div>`:''}
@@ -538,6 +558,10 @@ function renderBilling(){
         ${['Dine-in','Takeaway','Delivery'].map(t=>`<div class="otype-btn${currentOrderType===t?' active':''}" onclick="currentOrderType='${t}';renderBilling()">${t}</div>`).join('')}
       </div>
     </div>
+    <div id="item-code-box" class="code-box">
+      <div class="code-label">ITEM CODE<br>type number → press <b>Enter</b></div>
+      <div class="code-val" id="item-code-display">––</div>
+    </div>
     <div class="op-items" id="op-items-list">
       ${renderOrderItems()}
     </div>
@@ -551,24 +575,29 @@ function renderBilling(){
           ${['Cash','UPI','Card','Complimentary'].map(m=>`<div class="pay-btn${currentPayMode===m?' active':''}" onclick="currentPayMode='${m}';document.querySelectorAll('.pay-btn').forEach(b=>{b.classList.toggle('active',b.textContent==='${m}')})">${m}</div>`).join('')}
         </div>
       </div>
+      <div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:6px;line-height:1.6">
+        <b style="color:var(--ac)">№+Enter</b> add · <b>F2</b> new · <b>F4</b> hold · <b>F5</b> recall · <b>F8</b> save+print · <b>F9</b> KOT · <b>Ctrl+F</b> search
+      </div>
       <div class="action-btns">
-        <button class="btn btn-outline" onclick="holdBill()" title="Park this bill to recall later">⏸ Hold</button>
-        <button class="btn btn-outline" onclick="doKOT()">🖨 KOT</button>
-        <button class="btn btn-primary" onclick="doSaveBill()">💾 Save & Print</button>
+        <button class="btn btn-outline" onclick="holdBill()" title="Park this bill to recall later (F4)">⏸ Hold</button>
+        <button class="btn btn-outline" onclick="doKOT()" title="Kitchen print (F9)">🖨 KOT</button>
+        <button class="btn btn-primary" onclick="doSaveBill()" title="Settle payment, save & print (F8)">💾 Save & Print</button>
       </div>
     </div>
   </div>
 </div>`;
   document.getElementById('content').style.padding='0';
   document.getElementById('content').style.overflow='hidden';
+  updateCodeDisplay();
 }
 
 function renderOrderItems(){
-  if(!currentOrder.length) return`<div class="op-empty"><div class="icon">🛒</div><div>Cart is empty</div><small style="color:var(--mut)">Click menu items to add</small></div>`;
+  if(!currentOrder.length) return`<div class="op-empty"><div class="icon">🛒</div><div>Cart is empty</div><small style="color:var(--mut)">Type an item number &amp; press Enter — or click a card</small></div>`;
   return currentOrder.map((item,idx)=>`
   <div class="op-item">
     <div style="flex:1;min-width:0">
-      <div class="oi-name">${escH(item.name)}</div>
+      ${item.name_ta?`<div class="oi-ta">${escH(item.name_ta)}</div>`:''}
+      <div class="oi-name">${item.code!=null&&item.code!==''?`<b style="color:var(--ac)">${escH(String(item.code))}.</b> `:''}${escH(item.name)}</div>
       <div class="oi-cat">${escH(item.category||'')} • ${fmtAmt(item.rate)} each</div>
     </div>
     <div class="qty-ctrl">
@@ -614,7 +643,7 @@ function addToOrder(menuItemId){
   if(!item||item.available===false){toast('Item unavailable','warn');return}
   const idx=currentOrder.findIndex(o=>o.menuItemId===menuItemId);
   if(idx>=0){currentOrder[idx].qty++}
-  else{currentOrder.push({menuItemId:item.id,name:item.name,category:item.category,rate:parseFloat(item.price),qty:1,cost:parseFloat(item.cost||0),taxPct:parseFloat(item.tax||0)})}
+  else{currentOrder.push({menuItemId:item.id,code:item.code,name:item.name,name_ta:item.name_ta,category:item.category,rate:parseFloat(item.price),qty:1,cost:parseFloat(item.cost||0),taxPct:parseFloat(item.tax||0)})}
   refreshTotals();
 }
 
@@ -624,6 +653,57 @@ function changeQty(idx,delta){
   refreshTotals();
 }
 function removeItem(idx){currentOrder.splice(idx,1);refreshTotals()}
+
+// ===== NUMERIC KEYBOARD BILLING (item code → Enter) =====
+let posBuffer='';
+function updateCodeDisplay(){
+  const el=document.getElementById('item-code-display');
+  if(el)el.textContent=posBuffer||'––';
+  const box=document.getElementById('item-code-box');
+  if(box)box.classList.toggle('active',!!posBuffer);
+}
+function posClearBuffer(){posBuffer='';updateCodeDisplay();}
+function posCommitCode(){
+  if(!posBuffer)return;
+  const code=parseInt(posBuffer,10);
+  posBuffer='';updateCodeDisplay();
+  if(isNaN(code)){return;}
+  const item=getMenu().find(m=>Number(m.code)===code);
+  if(!item){toast(`Item #${code} not found`,'err',2200);return;}
+  if(item.available===false){toast(`${item.name} is currently unavailable`,'warn',2500);return;}
+  addToOrder(item.id); // same item → quantity increments (no duplicate row)
+  toast(`#${code} → ${item.name} added ✓`,'ok',1500);
+}
+function posNewBill(){
+  if(currentPage!=='billing')navigate('billing');
+  if(currentOrder.length && !confirm('Start a NEW bill? Current unsaved items will be cleared.'))return;
+  currentOrder=[];currentTable='';currentDiscount={val:0,type:'%'};posBuffer='';
+  renderBilling();toast('New bill started','ok');
+}
+// Single global keyboard handler for the whole POS
+document.addEventListener('keydown',function(e){
+  const t=e.target;
+  const typing=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable);
+  // ── Function-key shortcuts (work even outside billing; they route there) ──
+  switch(e.key){
+    case 'F2': e.preventDefault(); posNewBill(); return;
+    case 'F4': e.preventDefault(); if(currentPage!=='billing')navigate('billing'); holdBill(); return;
+    case 'F5': e.preventDefault(); if(currentPage!=='billing')navigate('billing'); openRecall(); return;
+    case 'F8': e.preventDefault(); if(currentPage==='billing')doSaveBill(); return;
+    case 'F9': e.preventDefault(); if(currentPage==='billing')doKOT(); return;
+  }
+  if((e.ctrlKey||e.metaKey)&&(e.key==='f'||e.key==='F')){
+    const s=document.querySelector('#menu-panel .search-input');
+    if(s){e.preventDefault();s.focus();s.select();}
+    return;
+  }
+  // ── Numeric item-code buffer: only on billing screen, never while typing in a field ──
+  if(typing||currentPage!=='billing')return;
+  if(/^[0-9]$/.test(e.key)){e.preventDefault();posBuffer=(posBuffer+e.key).slice(0,4);updateCodeDisplay();return;}
+  if(e.key==='Enter'){if(posBuffer){e.preventDefault();posCommitCode();}return;}
+  if(e.key==='Backspace'){if(posBuffer){e.preventDefault();posBuffer=posBuffer.slice(0,-1);updateCodeDisplay();}return;}
+  if(e.key==='Escape'){if(posBuffer){e.preventDefault();posClearBuffer();}return;}
+});
 
 // ===== DARK MODE =====
 function applyDark(){
@@ -722,27 +802,31 @@ let menuCatFilter='All', menuSearch='';
 function renderMenu(){
   const menu=getMenu();
   const cats=getCategories();
-  const filtered=menu.filter(i=>(menuCatFilter==='All'||i.category===menuCatFilter)&&(!menuSearch||i.name.toLowerCase().includes(menuSearch.toLowerCase())));
+  const mq=(menuSearch||'').trim(),mql=mq.toLowerCase();
+  const filtered=menu.filter(i=>(menuCatFilter==='All'||i.category===menuCatFilter)&&(!mq||i.name.toLowerCase().includes(mql)||(i.name_ta||'').includes(mq)||String(i.code||'').includes(mql)))
+    .sort((a,b)=>(a.code!=null?a.code:9999)-(b.code!=null?b.code:9999));
   document.getElementById('content').innerHTML=`
 <div style="display:flex;gap:16px;margin-bottom:20px;align-items:flex-start">
   <div style="flex:1">
     <div class="search-row">
-      <input class="search-input" placeholder="🔍 Search items..." value="${escH(menuSearch)}" oninput="menuSearch=this.value;renderMenu()">
+      <input class="search-input" placeholder="🔍 Search by name or code..." value="${escH(menuSearch)}" oninput="menuSearch=this.value;renderMenu()">
       <button class="btn btn-primary" onclick="openAddItemModal()">+ Add Item</button>
       <button class="btn btn-outline" onclick="openCatModal()">📂 Categories</button>
+      <button class="btn btn-outline" onclick="confirmLoadTamilMenu()" title="Load the Tamil restaurant menu with keyboard codes">🍛 Load Tamil Menu</button>
     </div>
     <div class="cat-tabs">
       ${['All',...cats].map(c=>`<div class="cat-tab${menuCatFilter===c?' active':''}" onclick="menuCatFilter='${escH(c)}';renderMenu()">${escH(c)}</div>`).join('')}
     </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Cost</th><th>Profit</th><th>GST</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Code</th><th>Item</th><th>Category</th><th>Price</th><th>Cost</th><th>Profit</th><th>GST</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
         ${filtered.length?filtered.map(item=>{
           const profit=item.price-item.cost;
           const margin=item.price>0?((profit/item.price)*100).toFixed(1):0;
           return`<tr>
-            <td style="font-weight:600">${escH(item.name)}</td>
+            <td><span class="badge" style="background:var(--ac);color:#fff;font-weight:800;font-size:13px">${item.code!=null&&item.code!==''?escH(String(item.code)):'—'}</span></td>
+            <td style="font-weight:600">${item.name_ta?`<div class="ta" style="font-size:12px;color:var(--mut)">${escH(item.name_ta)}</div>`:''}${escH(item.name)}</td>
             <td><span class="badge" style="background:var(--bg)">${escH(item.category)}</span></td>
             <td style="font-weight:700;color:var(--ac)">${fmtAmt(item.price)}</td>
             <td>${fmtAmt(item.cost||0)}</td>
@@ -757,7 +841,7 @@ function renderMenu(){
             </td>
           </tr>`;
         }).join(''):
-        `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--mut)">No items found. <a href="#" onclick="openAddItemModal()" style="color:var(--ac)">Add one?</a></td></tr>`}
+        `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--mut)">No items found. <a href="#" onclick="openAddItemModal()" style="color:var(--ac)">Add one?</a></td></tr>`}
         </tbody>
       </table>
     </div>
@@ -767,10 +851,12 @@ function renderMenu(){
 
 function openAddItemModal(prefill=null){
   const cats=getCategories();
-  const item=prefill||{id:'',name:'',category:cats[0]||'',price:'',cost:'',tax:5,isVeg:true,available:true};
+  const item=prefill||{id:'',code:'',name:'',name_ta:'',category:cats[0]||'',price:'',cost:'',tax:5,isVeg:true,available:true};
   openModal(`<div class="modal-hdr"><h3>${item.id?'Edit':'Add'} Menu Item</h3><button class="modal-close" onclick="closeModal()">×</button></div>
 <div class="form-grid">
-  <div class="form-group" style="grid-column:1/-1"><label>Item Name *</label><input id="mi-name" value="${escH(item.name)}" placeholder="e.g. Paneer Butter Masala"></div>
+  <div class="form-group"><label>Item Name (English) *</label><input id="mi-name" value="${escH(item.name)}" placeholder="e.g. Chicken Biryani"></div>
+  <div class="form-group"><label>Tamil Name</label><input id="mi-name-ta" class="ta" value="${escH(item.name_ta||'')}" placeholder="e.g. சிக்கன் பிரியாணி"></div>
+  <div class="form-group"><label>Shortcut Code (keyboard №)</label><input id="mi-code" type="number" min="1" step="1" value="${item.code!=null?escH(String(item.code)):''}" placeholder="e.g. 24"></div>
   <div class="form-group"><label>Category *</label><select id="mi-cat">${cats.map(c=>`<option${item.category===c?' selected':''}>${escH(c)}</option>`).join('')}</select></div>
   <div class="form-group"><label>Selling Price (₹) *</label><input id="mi-price" type="number" min="0" step="0.01" value="${item.price}"></div>
   <div class="form-group"><label>Cost Price (₹)</label><input id="mi-cost" type="number" min="0" step="0.01" value="${item.cost||0}"></div>
@@ -803,17 +889,27 @@ function openEditItemModal(id){
 function saveMenuItem(existingId){
   const name=document.getElementById('mi-name').value.trim();
   const price=parseFloat(document.getElementById('mi-price').value);
+  const codeRaw=document.getElementById('mi-code').value.trim();
   if(!name){toast('Enter item name','err');return}
   if(!price||price<=0){toast('Enter valid price','err');return}
+  const menu=getMenu();
+  let code=null;
+  if(codeRaw!==''){
+    code=parseInt(codeRaw,10);
+    if(isNaN(code)||code<1){toast('Shortcut code must be a positive number','err');return}
+    const clash=menu.find(m=>m.id!==existingId&&Number(m.code)===code);
+    if(clash){toast(`Code ${code} already assigned to "${clash.name}". Choose another.`,'err',3500);return}
+  }
   const item={
     id:existingId||uid(),
-    name,category:document.getElementById('mi-cat').value,
+    code,
+    name,name_ta:document.getElementById('mi-name-ta').value.trim(),
+    category:document.getElementById('mi-cat').value,
     price,cost:parseFloat(document.getElementById('mi-cost').value)||0,
     tax:parseFloat(document.getElementById('mi-tax').value)||0,
     isVeg:document.getElementById('mi-veg').checked,
     available:document.getElementById('mi-avail').checked
   };
-  const menu=getMenu();
   const idx=menu.findIndex(m=>m.id===existingId);
   if(idx>=0)menu[idx]=item;else menu.push(item);
   saveMenu(menu);
@@ -1552,6 +1648,93 @@ function resetAllData(){
 }
 
 // ===== SAMPLE DATA =====
+// ===== TAMIL RESTAURANT MENU (id = keyboard shortcut code) =====
+const TAMIL_MENU_CATS=['Breakfast','Dosa / Roast','Parotta','Meals','Biryani','Egg','Chicken','Fried Rice','Noodles','Snacks'];
+const TAMIL_MENU=[
+  {code:1, name_ta:'இட்லி', name_en:'Idli', price:12.50, cat:'Breakfast'},
+  {code:2, name_ta:'தோசை', name_en:'Dosa', price:25.00, cat:'Dosa / Roast'},
+  {code:3, name_ta:'பொங்கல்', name_en:'Pongal', price:50.00, cat:'Breakfast'},
+  {code:4, name_ta:'பூரி', name_en:'Poori', price:25.00, cat:'Breakfast'},
+  {code:5, name_ta:'ஊத்தாப்பம்', name_en:'Uthappam', price:40.00, cat:'Dosa / Roast'},
+  {code:6, name_ta:'ஆனியன் ரோஸ்ட்', name_en:'Onion Roast', price:80.00, cat:'Dosa / Roast'},
+  {code:7, name_ta:'ஆனியன் ஊத்தாப்பம்', name_en:'Onion Uthappam', price:80.00, cat:'Dosa / Roast'},
+  {code:8, name_ta:'முட்டை தோசை', name_en:'Egg Dosa', price:40.00, cat:'Egg', veg:false},
+  {code:9, name_ta:'புரோட்டா', name_en:'Parotta', price:20.00, cat:'Parotta'},
+  {code:10, name_ta:'வீச்சு புரோட்டா', name_en:'Veechu Parotta', price:25.00, cat:'Parotta'},
+  {code:11, name_ta:'மசால் ரோஸ்ட்', name_en:'Masala Roast', price:70.00, cat:'Dosa / Roast'},
+  {code:12, name_ta:'சிக்கன் கொத்து', name_en:'Chicken Kothu', price:130.00, cat:'Parotta', veg:false},
+  {code:13, name_ta:'மசால் தோசை', name_en:'Masala Dosa', price:40.00, cat:'Dosa / Roast'},
+  {code:14, name_ta:'நெய் ரோஸ்ட்', name_en:'Ghee Roast', price:80.00, cat:'Dosa / Roast'},
+  {code:15, name_ta:'முட்டை வீச்சு', name_en:'Egg Veechu Parotta', price:35.00, cat:'Egg', veg:false},
+  {code:16, name_ta:'ஆம்லெட்', name_en:'Omelette', price:20.00, cat:'Egg', veg:false},
+  {code:17, name_ta:'பப்ஸ் / சமோசா', name_en:'Puffs / Samosa', price:15.00, cat:'Snacks'},
+  {code:18, name_ta:'சைவ சாப்பாடு', name_en:'Veg Meals', price:90.00, cat:'Meals'},
+  {code:19, name_ta:'அசைவ சாப்பாடு', name_en:'Non-Veg Meals', price:90.00, cat:'Meals', veg:false},
+  {code:21, name_ta:'சைவ சாப்பாடு பார்சல்', name_en:'Veg Meals Parcel', price:100.00, cat:'Meals'},
+  {code:22, name_ta:'அசைவ சாப்பாடு பார்சல்', name_en:'Non-Veg Meals Parcel', price:100.00, cat:'Meals', veg:false},
+  {code:23, name_ta:'ரோஸ்ட்', name_en:'Roast', price:50.00, cat:'Dosa / Roast'},
+  {code:24, name_ta:'சிக்கன் பிரியாணி', name_en:'Chicken Biryani', price:100.00, cat:'Biryani', veg:false},
+  {code:25, name_ta:'வெரைட்டி ரைஸ்', name_en:'Variety Rice', price:50.00, cat:'Meals'},
+  {code:26, name_ta:'சப்பாத்தி', name_en:'Chapathi', price:20.00, cat:'Parotta'},
+  {code:27, name_ta:'முட்டை ரோஸ்ட்', name_en:'Egg Roast', price:70.00, cat:'Egg', veg:false},
+  {code:28, name_ta:'குஸ்கா', name_en:'Kuska', price:60.00, cat:'Biryani'},
+  {code:31, name_ta:'ஒன் சைடு ஆம்லெட்', name_en:'One Side Omelette / Half Boil', price:20.00, cat:'Egg', veg:false},
+  {code:32, name_ta:'வெஜ் பிரியாணி', name_en:'Veg Biryani', price:60.00, cat:'Biryani'},
+  {code:33, name_ta:'கிச்சடி', name_en:'Kichadi', price:50.00, cat:'Breakfast'},
+  {code:35, name_ta:'ஸ்பெஷல் கொத்து புரோட்டா', name_en:'Spl Kothu Parotta', price:90.00, cat:'Parotta'},
+  {code:36, name_ta:'சைவ கொத்து புரோட்டா', name_en:'Veg Kothu Parotta', price:60.00, cat:'Parotta'},
+  {code:37, name_ta:'முட்டை பிரியாணி', name_en:'Egg Biryani', price:90.00, cat:'Biryani', veg:false},
+  {code:40, name_ta:'சில்லி சிக்கன் (1/4 kg)', name_en:'Chilli Chicken 250g', price:125.00, cat:'Chicken', veg:false},
+  {code:41, name_ta:'சிக்கன் 65', name_en:'Chicken 65', price:100.00, cat:'Chicken', veg:false},
+  {code:42, name_ta:'ஆனியன் கலக்கி', name_en:'Onion Kalaki', price:20.00, cat:'Egg', veg:false},
+  {code:43, name_ta:'முட்டை பொரியல்', name_en:'Egg Poriyal', price:40.00, cat:'Egg', veg:false},
+  {code:44, name_ta:'பெப்பர் சிக்கன்', name_en:'Pepper Chicken', price:130.00, cat:'Chicken', veg:false},
+  {code:45, name_ta:'முட்டை பொடிமாஸ்', name_en:'Egg Podimas', price:40.00, cat:'Egg', veg:false},
+  {code:46, name_ta:'சில்லி புரோட்டா', name_en:'Chilli Parotta', price:80.00, cat:'Parotta'},
+  {code:47, name_ta:'சிக்கன் ரைஸ்', name_en:'Chicken Fried Rice', price:100.00, cat:'Fried Rice', veg:false},
+  {code:48, name_ta:'எக் ரைஸ்', name_en:'Egg Fried Rice', price:80.00, cat:'Fried Rice', veg:false},
+  {code:49, name_ta:'எக் நூடுல்ஸ்', name_en:'Egg Noodles', price:80.00, cat:'Noodles', veg:false},
+  {code:50, name_ta:'சிக்கன் நூடுல்ஸ்', name_en:'Chicken Noodles', price:100.00, cat:'Noodles', veg:false},
+  {code:51, name_ta:'சிக்கன் மஞ்சூரியன்', name_en:'Chicken Manchurian', price:100.00, cat:'Chicken', veg:false},
+  {code:52, name_ta:'காளான் ரைஸ்', name_en:'Mushroom Fried Rice', price:100.00, cat:'Fried Rice'},
+  {code:53, name_ta:'வெஜ் நூடுல்ஸ்', name_en:'Veg Noodles', price:70.00, cat:'Noodles'},
+  {code:54, name_ta:'கோபி ரைஸ்', name_en:'Gobi Fried Rice', price:100.00, cat:'Fried Rice'},
+  {code:55, name_ta:'காளான் நூடுல்ஸ்', name_en:'Mushroom Noodles', price:100.00, cat:'Noodles'},
+  {code:56, name_ta:'கோபி நூடுல்ஸ்', name_en:'Gobi Noodles', price:100.00, cat:'Noodles'},
+  {code:58, name_ta:'வெஜ் ரைஸ்', name_en:'Veg Fried Rice', price:70.00, cat:'Fried Rice'},
+  {code:62, name_ta:'கோதுமை உப்புமா', name_en:'Wheat Upma', price:60.00, cat:'Breakfast'},
+  {code:64, name_ta:'மினி ஆனியன் ஊத்தாப்பம்', name_en:'Mini Onion Uthappam', price:40.00, cat:'Dosa / Roast'},
+  {code:70, name_ta:'பிளைன் ஆம்லெட்', name_en:'Plain Omelette', price:15.00, cat:'Egg', veg:false},
+  {code:71, name_ta:'சில்லி சிக்கன் (100g)', name_en:'Chilli Chicken 100g', price:50.00, cat:'Chicken', veg:false},
+  {code:72, name_ta:'வடை', name_en:'Vadai', price:10.00, cat:'Snacks'},
+  {code:73, name_ta:'செட் தோசை', name_en:'Set Dosa', price:25.00, cat:'Dosa / Roast'},
+  {code:74, name_ta:'மினி ஊத்தாப்பம்', name_en:'Mini Uthappam', price:30.00, cat:'Dosa / Roast'},
+  {code:76, name_ta:'பொடி தோசை', name_en:'Podi Dosa', price:40.00, cat:'Dosa / Roast'},
+  {code:77, name_ta:'பொடி ரோஸ்ட்', name_en:'Podi Roast', price:70.00, cat:'Dosa / Roast'},
+  {code:80, name_ta:'கலக்கி', name_en:'Kalaki', price:20.00, cat:'Egg', veg:false},
+  {code:82, name_ta:'இட்லி (3 Pcs)', name_en:'Idli (3 Pcs)', price:40.00, cat:'Breakfast'},
+];
+// Build/replace the menu with the Tamil menu. code == keyboard shortcut.
+function loadTamilMenu(opts){
+  opts=opts||{};
+  const menu=TAMIL_MENU.map(m=>({
+    id:uid(), code:m.code, name:m.name_en, name_ta:m.name_ta,
+    category:m.cat, price:m.price, cost:0, isVeg:m.veg!==false, available:true,
+  }));
+  saveCategories(TAMIL_MENU_CATS.slice());
+  saveMenu(menu);
+  DB.set('tamilMenuV1',true);
+  if(!opts.silent){
+    toast(`Tamil menu loaded — ${menu.length} items with keyboard codes`,'ok',3000);
+    menuCatFilter='All';menuSearch='';
+    navigate('billing');
+  }
+}
+function confirmLoadTamilMenu(){
+  if(getMenu().length && !confirm(`Replace the current menu with the ${TAMIL_MENU.length}-item Tamil restaurant menu (with keyboard codes)?\n\nYour saved orders, reports and settings are NOT affected.`))return;
+  loadTamilMenu();
+}
+
 function initSampleData(){
   if(DB.get('dataInitialized'))return;
 
@@ -2045,6 +2228,13 @@ function updateClock(){
 // ===== INIT =====
 (function(){
   initSampleData();
+  // One-time: install the Tamil restaurant menu (with numeric keyboard codes).
+  // Runs on a fresh install OR to upgrade a legacy demo menu that has no codes yet.
+  // Guarded by tamilMenuV1 so it never re-wipes a menu the owner has since edited.
+  if(!DB.get('tamilMenuV1')){
+    const m=getMenu();
+    if(!m.length || !m.some(x=>x.code!=null&&x.code!=='')) loadTamilMenu({silent:true});
+  }
   const s=cfg();
   document.getElementById('sb-rname').textContent=s.restaurantName||'RestroGenie';
   // Customer self-order (QR) mode: append ?mode=order to the URL
