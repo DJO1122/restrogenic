@@ -6,9 +6,9 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
-  // The prototype pages use loose `any`/`unknown` typing; the app compiles &
-  // runs fine. Don't block production builds on strict type/lint checks.
-  typescript: { ignoreBuildErrors: true },
+  // TypeScript build checks are ON — `tsc --noEmit` passes clean.
+  typescript: { ignoreBuildErrors: false },
+  // ESLint isn't configured in this repo yet; don't block builds on it.
   eslint: { ignoreDuringBuilds: true },
 };
 

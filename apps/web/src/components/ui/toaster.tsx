@@ -69,7 +69,7 @@ ToastClose.displayName = ToastPrimitives.Close.displayName;
 
 // Toast hook
 type ToastProps = { title?: string; description?: string; variant?: "default" | "destructive" | "success" };
-const toastQueue: ((toast: ToastProps) => void)[] = [];
+const toastQueue: ToastProps[] = [];
 let toastHandler: ((toast: ToastProps) => void) | null = null;
 
 export function toast(props: ToastProps) {

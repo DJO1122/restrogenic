@@ -22,7 +22,9 @@ export default function TablesPage() {
     refetchInterval: 10000,
   });
 
-  const sections = Array.from(new Set(tables.map((t: any) => t.section || "Main"))).filter(Boolean);
+  const sections: string[] = Array.from(
+    new Set<string>(tables.map((t: any) => (t.section || "Main") as string)),
+  ).filter(Boolean);
 
   function handleTableClick(table: any) {
     if (table.status === "AVAILABLE") {

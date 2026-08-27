@@ -42,3 +42,4 @@ deploy/.env.prod
 *.db-journal
 prisma/dev.db
 apps/api/prisma/dev.db
+*.tsbuildinfo
