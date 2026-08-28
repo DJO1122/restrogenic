@@ -2,7 +2,8 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# monorepo: apps/api has no standalone lockfile, so use install (not ci)
+RUN npm install
 COPY . .
 RUN npx prisma generate
 RUN npm run build
